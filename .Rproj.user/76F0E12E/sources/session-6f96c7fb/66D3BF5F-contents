@@ -124,7 +124,7 @@ summary(data)
 
 ## 3 Calidad de los datos
 
-### 3.1 NAs
+<!-- ### 3.1 NAs -->
 
 ```{r}
 colSums(is.na(data))
