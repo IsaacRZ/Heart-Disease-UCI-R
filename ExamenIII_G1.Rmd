@@ -1,0 +1,146 @@
+---
+title: "Heart Disease UCI"
+author: "Isaac"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+
+body {
+  background-color: #E6F4F8;
+  color: #1A2B32;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h1.title {
+  color: #D32F2F;
+  font-weight: bold;
+  text-align: center;
+}
+
+h1, h2, h3 {
+  color: #1A2B32;
+  font-weight: bold;
+}
+
+h2 {
+  border-bottom: 3px solid #D32F2F;
+  padding-bottom: 6px;
+  margin-top: 30px;
+}
+
+.nav-pills > li > a {
+  color: #1A2B32;
+  font-weight: bold;
+}
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:focus,
+.nav-pills > li.active > a:hover {
+  background-color: #D32F2F;
+  color: white;
+}
+
+pre {
+  border-left: 5px solid #4FC3F7;
+  border-radius: 6px;
+}
+
+.card-youtube {
+  background-color: white;
+  border-left: 6px solid #D32F2F;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 10px;
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+}
+
+
+</style>
+
+# Información general {.tabset .tabset-pills}
+
+## 1. Introducción
+
+### Objetivos
+
+1. Describir la estructura general del dataset, identificando sus variables, tipos de datos y características principales.
+2. Evaluar la calidad de los datos mediante la revisión de valores faltantes, duplicados, tipos de variables y posibles inconsistencias.
+3. Analizar las variables numéricas relacionadas con edad, presión arterial, colesterol, frecuencia cardíaca máxima y depresión del segmento ST (oldpeak).
+4. Explorar las variables categóricas como sexo, tipo de dolor de pecho (cp), electrocardiograma en reposo (restecg), pendiente del segmento ST (slope) y talasemia (thal).
+5. Visualizar distribuciones, relaciones y posibles valores atípicos mediante gráficos exploratorios.
+6. Analizar correlaciones entre variables numéricas para identificar asociaciones relevantes.
+7. Preparar los datos para clusterización mediante selección de variables numéricas, tratamiento de valores problemáticos (NA, outliers) y escalamiento.
+8. Aplicar Análisis de Componentes Principales para evaluar la reducción de dimensionalidad y comparar diferentes cantidades de componentes.
+9. Aplicar técnicas de clusterización (k-means), evaluando diferentes cantidades de grupos mediante métodos como el codo y la silueta.
+10. Interpretar los clusters obtenidos para describir perfiles de pacientes según sus características clínicas principales, comparándolos contra la variable num (severidad diagnosticada).
+
+
+
+## 2. Estructura general del dataset
+
+
+### 2.1 Carga de datos y librerías
+
+```{r, warning=FALSE}
+library(readr)
+library(dplyr)
+data <- read.csv("data/raw/heart_disease_uci.csv")
+```
+
+
+```{r Factor, include=FALSE}
+data$sex <-  as.factor(data$sex)
+data$cp <-  as.factor(data$cp)
+data$restecg <-  as.factor(data$restecg)
+data$slope <-  as.factor(data$slope)
+data$thal <-  as.factor(data$thal)
+data$dataset <- as.factor(data$dataset)
+```
+
+
+### 2.2 Dimensiones y vista general
+
+```{r}
+dim(data)
+head(data)
+```
+### 2.3 Tipos de variables
+
+```{r}
+str(data)
+glimpse(data)
+```
+### 2.4 Resumen estadístico
+```{r}
+summary(data)
+```
+
+
+## 3 Calidad de los datos
+
+### 3.1 NAs
+
+```{r}
+colSums(is.na(data))
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
