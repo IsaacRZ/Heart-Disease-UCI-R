@@ -184,23 +184,118 @@ summary(data)
 
 ## 3. Calidad de los datos
 
-<!-- ### 3.1 NAs -->
+### 3.1 Valores faltantes
 
 ```{r}
 colSums(is.na(data))
-
 ```
-
-
 
 ```{r}
-
+# Porcentaje de NA por variable
+round(colSums(is.na(data)) / nrow(data) * 100, 2)
 ```
 
-
+### 3.2 Registros duplicados
 
 ```{r}
-
+sum(duplicated(data))
 ```
 
+### 3.3 Revisión de tipos de variables
 
+```{r}
+sapply(data, class)
+```
+
+### 3.4 Consistencia de valores categóricos
+
+```{r}
+table(data$sex)
+table(data$dataset)
+table(data$cp)
+table(data$restecg)
+table(data$slope)
+table(data$thal)
+table(data$fbs)
+table(data$exang)
+```
+
+### 3.5 Consistencia de valores numéricos (rangos y posibles errores)
+
+```{r}
+summary(data[, c("age", "trestbps", "chol", "thalch", "oldpeak", "ca")])
+```
+
+### 3.6 Resumen de hallazgos sobre calidad de datos
+
+
+
+## 4. Análisis exploratorio de variables numéricas
+
+### 4.1 Estadísticos descriptivos (edad, trestbps, chol, thalch, oldpeak)
+
+### 4.2 Distribuciones (histogramas y densidad)
+
+### 4.3 Boxplots y detección de valores atípicos
+
+## 5. Análisis exploratorio de variables categóricas
+
+### 5.1 Frecuencias y proporciones (sex, cp, restecg, slope, thal, fbs, exang)
+
+### 5.2 Visualización (gráficos de barras)
+
+### 5.3 Relación de las variables categóricas con `num`
+
+## 6. Visualizaciones exploratorias y relaciones entre variables
+
+### 6.1 Relaciones entre variables numéricas (scatterplots)
+
+### 6.2 Relaciones entre variables numéricas y categóricas (boxplots por grupo)
+
+### 6.3 Relación de variables clave con la severidad (`num`)
+
+## 7. Análisis de correlación
+
+### 7.1 Matriz de correlación entre variables numéricas
+
+### 7.2 Visualización con `corrplot`
+
+### 7.3 Interpretación de correlaciones relevantes
+
+## 8. Preparación de datos para clusterización
+
+### 8.1 Selección de variables numéricas relevantes
+
+### 8.2 Tratamiento de valores faltantes (NA)
+
+### 8.3 Tratamiento de outliers
+
+### 8.4 Escalamiento de variables (estandarización)
+
+## 9. Análisis de Componentes Principales (PCA)
+
+### 9.1 Aplicación de PCA sobre las variables escaladas
+
+### 9.2 Varianza explicada por componente
+
+### 9.3 Selección del número de componentes a retener
+
+### 9.4 Visualización de individuos y variables en el espacio PCA
+
+## 10. Clusterización (K-means)
+
+### 10.1 Determinación del número óptimo de clusters — método del codo
+
+### 10.2 Determinación del número óptimo de clusters — método de la silueta
+
+### 10.3 Aplicación de k-means
+
+### 10.4 Visualización de los clusters (sobre componentes principales)
+
+## 11. Interpretación de resultados
+
+### 11.1 Perfil descriptivo de cada cluster
+
+### 11.2 Comparación de los clusters contra la variable `num` (severidad)
+
+### 11.3 Conclusiones generales

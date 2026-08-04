@@ -705,13 +705,206 @@ data$dataset &lt;- as.factor(data$dataset)</code></pre>
 </div>
 </div>
 <div id="calidad-de-los-datos" class="section level2">
-<h2>3 Calidad de los datos</h2>
-<!-- ### 3.1 NAs -->
+<h2>3. Calidad de los datos</h2>
+<div id="valores-faltantes" class="section level3">
+<h3>3.1 Valores faltantes</h3>
 <pre class="r"><code>colSums(is.na(data))</code></pre>
 <pre><code>##       id      age      sex  dataset       cp trestbps     chol      fbs 
 ##        0        0        0        0        0       59       30       90 
 ##  restecg   thalch    exang  oldpeak    slope       ca     thal      num 
 ##        0       55       55       62        0      611        0        0</code></pre>
+<pre class="r"><code># Porcentaje de NA por variable
+round(colSums(is.na(data)) / nrow(data) * 100, 2)</code></pre>
+<pre><code>##       id      age      sex  dataset       cp trestbps     chol      fbs 
+##     0.00     0.00     0.00     0.00     0.00     6.41     3.26     9.78 
+##  restecg   thalch    exang  oldpeak    slope       ca     thal      num 
+##     0.00     5.98     5.98     6.74     0.00    66.41     0.00     0.00</code></pre>
+</div>
+<div id="registros-duplicados" class="section level3">
+<h3>3.2 Registros duplicados</h3>
+<pre class="r"><code>sum(duplicated(data))</code></pre>
+<pre><code>## [1] 0</code></pre>
+</div>
+<div id="revisión-de-tipos-de-variables" class="section level3">
+<h3>3.3 Revisión de tipos de variables</h3>
+<pre class="r"><code>sapply(data, class)</code></pre>
+<pre><code>##        id       age       sex   dataset        cp  trestbps      chol       fbs 
+## &quot;integer&quot; &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot; &quot;integer&quot; &quot;logical&quot; 
+##   restecg    thalch     exang   oldpeak     slope        ca      thal       num 
+##  &quot;factor&quot; &quot;integer&quot; &quot;logical&quot; &quot;numeric&quot;  &quot;factor&quot; &quot;integer&quot;  &quot;factor&quot; &quot;integer&quot;</code></pre>
+</div>
+<div id="consistencia-de-valores-categóricos" class="section level3">
+<h3>3.4 Consistencia de valores categóricos</h3>
+<pre class="r"><code>table(data$sex)</code></pre>
+<pre><code>## 
+## Female   Male 
+##    194    726</code></pre>
+<pre class="r"><code>table(data$dataset)</code></pre>
+<pre><code>## 
+##     Cleveland       Hungary   Switzerland VA Long Beach 
+##           304           293           123           200</code></pre>
+<pre class="r"><code>table(data$cp)</code></pre>
+<pre><code>## 
+##    asymptomatic atypical angina     non-anginal  typical angina 
+##             496             174             204              46</code></pre>
+<pre class="r"><code>table(data$restecg)</code></pre>
+<pre><code>## 
+##                    lv hypertrophy           normal st-t abnormality 
+##                2              188              551              179</code></pre>
+<pre class="r"><code>table(data$slope)</code></pre>
+<pre><code>## 
+##             downsloping        flat   upsloping 
+##         309          63         345         203</code></pre>
+<pre class="r"><code>table(data$thal)</code></pre>
+<pre><code>## 
+##                        fixed defect            normal reversable defect 
+##               486                46               196               192</code></pre>
+<pre class="r"><code>table(data$fbs)</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   692   138</code></pre>
+<pre class="r"><code>table(data$exang)</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   528   337</code></pre>
+</div>
+<div id="consistencia-de-valores-numéricos-rangos-y-posibles-errores" class="section level3">
+<h3>3.5 Consistencia de valores numéricos (rangos y posibles
+errores)</h3>
+<pre class="r"><code>summary(data[, c(&quot;age&quot;, &quot;trestbps&quot;, &quot;chol&quot;, &quot;thalch&quot;, &quot;oldpeak&quot;, &quot;ca&quot;)])</code></pre>
+<pre><code>##       age           trestbps          chol           thalch     
+##  Min.   :28.00   Min.   :  0.0   Min.   :  0.0   Min.   : 60.0  
+##  1st Qu.:47.00   1st Qu.:120.0   1st Qu.:175.0   1st Qu.:120.0  
+##  Median :54.00   Median :130.0   Median :223.0   Median :140.0  
+##  Mean   :53.51   Mean   :132.1   Mean   :199.1   Mean   :137.5  
+##  3rd Qu.:60.00   3rd Qu.:140.0   3rd Qu.:268.0   3rd Qu.:157.0  
+##  Max.   :77.00   Max.   :200.0   Max.   :603.0   Max.   :202.0  
+##                  NA&#39;s   :59      NA&#39;s   :30      NA&#39;s   :55     
+##     oldpeak              ca        
+##  Min.   :-2.6000   Min.   :0.0000  
+##  1st Qu.: 0.0000   1st Qu.:0.0000  
+##  Median : 0.5000   Median :0.0000  
+##  Mean   : 0.8788   Mean   :0.6764  
+##  3rd Qu.: 1.5000   3rd Qu.:1.0000  
+##  Max.   : 6.2000   Max.   :3.0000  
+##  NA&#39;s   :62        NA&#39;s   :611</code></pre>
+</div>
+<div id="resumen-de-hallazgos-sobre-calidad-de-datos" class="section level3">
+<h3>3.6 Resumen de hallazgos sobre calidad de datos</h3>
+</div>
+</div>
+<div id="análisis-exploratorio-de-variables-numéricas" class="section level2">
+<h2>4. Análisis exploratorio de variables numéricas</h2>
+<div id="estadísticos-descriptivos-edad-trestbps-chol-thalch-oldpeak" class="section level3">
+<h3>4.1 Estadísticos descriptivos (edad, trestbps, chol, thalch,
+oldpeak)</h3>
+</div>
+<div id="distribuciones-histogramas-y-densidad" class="section level3">
+<h3>4.2 Distribuciones (histogramas y densidad)</h3>
+</div>
+<div id="boxplots-y-detección-de-valores-atípicos" class="section level3">
+<h3>4.3 Boxplots y detección de valores atípicos</h3>
+</div>
+</div>
+<div id="análisis-exploratorio-de-variables-categóricas" class="section level2">
+<h2>5. Análisis exploratorio de variables categóricas</h2>
+<div id="frecuencias-y-proporciones-sex-cp-restecg-slope-thal-fbs-exang" class="section level3">
+<h3>5.1 Frecuencias y proporciones (sex, cp, restecg, slope, thal, fbs,
+exang)</h3>
+</div>
+<div id="visualización-gráficos-de-barras" class="section level3">
+<h3>5.2 Visualización (gráficos de barras)</h3>
+</div>
+<div id="relación-de-las-variables-categóricas-con-num" class="section level3">
+<h3>5.3 Relación de las variables categóricas con <code>num</code></h3>
+</div>
+</div>
+<div id="visualizaciones-exploratorias-y-relaciones-entre-variables" class="section level2">
+<h2>6. Visualizaciones exploratorias y relaciones entre variables</h2>
+<div id="relaciones-entre-variables-numéricas-scatterplots" class="section level3">
+<h3>6.1 Relaciones entre variables numéricas (scatterplots)</h3>
+</div>
+<div id="relaciones-entre-variables-numéricas-y-categóricas-boxplots-por-grupo" class="section level3">
+<h3>6.2 Relaciones entre variables numéricas y categóricas (boxplots por
+grupo)</h3>
+</div>
+<div id="relación-de-variables-clave-con-la-severidad-num" class="section level3">
+<h3>6.3 Relación de variables clave con la severidad
+(<code>num</code>)</h3>
+</div>
+</div>
+<div id="análisis-de-correlación" class="section level2">
+<h2>7. Análisis de correlación</h2>
+<div id="matriz-de-correlación-entre-variables-numéricas" class="section level3">
+<h3>7.1 Matriz de correlación entre variables numéricas</h3>
+</div>
+<div id="visualización-con-corrplot" class="section level3">
+<h3>7.2 Visualización con <code>corrplot</code></h3>
+</div>
+<div id="interpretación-de-correlaciones-relevantes" class="section level3">
+<h3>7.3 Interpretación de correlaciones relevantes</h3>
+</div>
+</div>
+<div id="preparación-de-datos-para-clusterización" class="section level2">
+<h2>8. Preparación de datos para clusterización</h2>
+<div id="selección-de-variables-numéricas-relevantes" class="section level3">
+<h3>8.1 Selección de variables numéricas relevantes</h3>
+</div>
+<div id="tratamiento-de-valores-faltantes-na" class="section level3">
+<h3>8.2 Tratamiento de valores faltantes (NA)</h3>
+</div>
+<div id="tratamiento-de-outliers" class="section level3">
+<h3>8.3 Tratamiento de outliers</h3>
+</div>
+<div id="escalamiento-de-variables-estandarización" class="section level3">
+<h3>8.4 Escalamiento de variables (estandarización)</h3>
+</div>
+</div>
+<div id="análisis-de-componentes-principales-pca" class="section level2">
+<h2>9. Análisis de Componentes Principales (PCA)</h2>
+<div id="aplicación-de-pca-sobre-las-variables-escaladas" class="section level3">
+<h3>9.1 Aplicación de PCA sobre las variables escaladas</h3>
+</div>
+<div id="varianza-explicada-por-componente" class="section level3">
+<h3>9.2 Varianza explicada por componente</h3>
+</div>
+<div id="selección-del-número-de-componentes-a-retener" class="section level3">
+<h3>9.3 Selección del número de componentes a retener</h3>
+</div>
+<div id="visualización-de-individuos-y-variables-en-el-espacio-pca" class="section level3">
+<h3>9.4 Visualización de individuos y variables en el espacio PCA</h3>
+</div>
+</div>
+<div id="clusterización-k-means" class="section level2">
+<h2>10. Clusterización (K-means)</h2>
+<div id="determinación-del-número-óptimo-de-clusters-método-del-codo" class="section level3">
+<h3>10.1 Determinación del número óptimo de clusters — método del
+codo</h3>
+</div>
+<div id="determinación-del-número-óptimo-de-clusters-método-de-la-silueta" class="section level3">
+<h3>10.2 Determinación del número óptimo de clusters — método de la
+silueta</h3>
+</div>
+<div id="aplicación-de-k-means" class="section level3">
+<h3>10.3 Aplicación de k-means</h3>
+</div>
+<div id="visualización-de-los-clusters-sobre-componentes-principales" class="section level3">
+<h3>10.4 Visualización de los clusters (sobre componentes
+principales)</h3>
+</div>
+</div>
+<div id="interpretación-de-resultados" class="section level2">
+<h2>11. Interpretación de resultados</h2>
+<div id="perfil-descriptivo-de-cada-cluster" class="section level3">
+<h3>11.1 Perfil descriptivo de cada cluster</h3>
+</div>
+<div id="comparación-de-los-clusters-contra-la-variable-num-severidad" class="section level3">
+<h3>11.2 Comparación de los clusters contra la variable <code>num</code>
+(severidad)</h3>
+</div>
+<div id="conclusiones-generales" class="section level3">
+<h3>11.3 Conclusiones generales</h3>
+</div>
 </div>
 </div>
 
