@@ -67,7 +67,30 @@ pre {
 
 ## 1. Introducción
 
-### Objetivos
+### 1.1 Descripcion del dataset
+
+### 1.2 Descripcion de cada variable
+
+| Variable  | Tipo  | Descripción                                                                 |
+|-----------|-------|------------------------------------------------------------------------------|
+| id        | int   | Identificador único del paciente                                            |
+| age       | int   | Edad del paciente (en años)                                                 |
+| sex       | chr   | Sexo del paciente (Male / Female)                                           |
+| dataset   | chr   | Hospital/centro de origen de los datos (categórica)                         |
+| cp        | chr   | Tipo de dolor de pecho: angina típica, angina atípica, no anginal, asintomático |
+| trestbps  | int   | Presión arterial en reposo al ingreso (mm Hg)                               |
+| chol      | int   | Colesterol sérico (mg/dl)                                                   |
+| fbs       | logi  | Glucemia en ayunas > 120 mg/dl (categórica binaria)                         |
+| restecg   | chr   | Resultado del electrocardiograma en reposo (normal, anomalía ST-T, hipertrofia ventricular izq.) |
+| thalch    | int   | Frecuencia cardíaca máxima alcanzada                                        |
+| exang     | logi  | Angina inducida por ejercicio (categórica binaria)                          |
+| oldpeak   | num   | Depresión del segmento ST inducida por ejercicio respecto al reposo         |
+| slope     | chr   | Pendiente del segmento ST en el pico del ejercicio (ascendente, plana, descendente) |
+| ca        | int   | Número de vasos principales (0–3) coloreados por fluoroscopía               |
+| thal      | chr   | Resultado de la prueba de talio (normal, defecto fijo, defecto reversible)  |
+| num       | int   | Severidad de la enfermedad cardíaca (0 = ausencia, 1–4 = presencia/grado) -> Interpretación posterior |
+
+### 1.3 Objetivos
 
 1. Describir la estructura general del dataset, identificando sus variables, tipos de datos y características principales.
 2. Evaluar la calidad de los datos mediante la revisión de valores faltantes, duplicados, tipos de variables y posibles inconsistencias.
@@ -80,21 +103,58 @@ pre {
 9. Aplicar técnicas de clusterización (k-means), evaluando diferentes cantidades de grupos mediante métodos como el codo y la silueta.
 10. Interpretar los clusters obtenidos para describir perfiles de pacientes según sus características clínicas principales, comparándolos contra la variable num (severidad diagnosticada).
 
+### 1.4 Metodología
 
+El proyecto se desarrolla en R Markdown, con el objetivo de generar un documento HTML reproducible y ademas un repositorio en GitHub para colaborar y versionar el codigo. El análisis se realizará exclusivamente en R, utilizando funciones y librerías adecuadas para la lectura, limpieza, exploración, visualización y clusterización de los datos.
+
+La metodología se dividirá en las siguientes etapas:
+
+1. **Carga de librerías:**  
+   Se cargarán las librerías necesarias para manipulación de datos, visualización, análisis de correlación, PCA y clusterización.
+
+2. **Lectura del dataset:**  
+   Se importará el archivo `heart_disease_uci.csv` y se revisará su estructura inicial.
+
+3. **Limpieza de datos:**  
+   Se evaluarán valores faltantes, duplicados, tipos de variables y posibles inconsistencias.
+
+4. **Análisis exploratorio de datos:**  
+   Se analizarán variables numéricas y categóricas mediante estadísticas descriptivas, tablas y gráficos.
+
+5. **Análisis de correlación:**  
+   Se revisarán relaciones entre variables numéricas para identificar asociaciones importantes.
+
+6. **Preparación para clusterización:**  
+   Se seleccionarán variables numéricas relevantes y se aplicará escalamiento para evitar que variables con valores más grandes dominen el análisis.
+
+7. **Análisis de Componentes Principales:**  
+   Se aplicará PCA para evaluar si las variables numéricas pueden resumirse en menos componentes. La selección de componentes se justificará con base en la varianza explicada y la utilidad para visualizar los datos.
+
+8. **Clusterización:**  
+   Se aplicará k-means y se evaluarán diferentes cantidades de clusters mediante métodos como el codo y la silueta.
+
+9. **Interpretación de resultados:**  
+   Se describirán los grupos obtenidos y se analizarán sus principales características.
 
 ## 2. Estructura general del dataset
 
 
 ### 2.1 Carga de datos y librerías
 
-```{r, warning=FALSE}
+```{r, message=FALSE, warning=FALSE}
 library(readr)
 library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(FactoMineR)
+library(factoextra)
+library(cluster)
 data <- read.csv("data/raw/heart_disease_uci.csv")
 ```
 
+### 2.2 Instanciacion y conversion de variables
 
-```{r Factor, include=FALSE}
+```{r Factor}
 data$sex <-  as.factor(data$sex)
 data$cp <-  as.factor(data$cp)
 data$restecg <-  as.factor(data$restecg)
@@ -104,25 +164,25 @@ data$dataset <- as.factor(data$dataset)
 ```
 
 
-### 2.2 Dimensiones y vista general
+### 2.3 Dimensiones y vista general
 
 ```{r}
 dim(data)
 head(data)
 ```
-### 2.3 Tipos de variables
+### 2.4 Tipos de variables
 
 ```{r}
 str(data)
 glimpse(data)
 ```
-### 2.4 Resumen estadístico
+### 2.5 Resumen estadístico
 ```{r}
 summary(data)
 ```
 
 
-## 3 Calidad de los datos
+## 3. Calidad de los datos
 
 <!-- ### 3.1 NAs -->
 

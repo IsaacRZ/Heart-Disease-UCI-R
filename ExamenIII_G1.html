@@ -404,8 +404,116 @@ box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
 <h1 class="tabset tabset-pills">Información general</h1>
 <div id="introducción" class="section level2">
 <h2>1. Introducción</h2>
+<div id="descripcion-del-dataset" class="section level3">
+<h3>1.1 Descripcion del dataset</h3>
+</div>
+<div id="descripcion-de-cada-variable" class="section level3">
+<h3>1.2 Descripcion de cada variable</h3>
+<table>
+<colgroup>
+<col width="11%" />
+<col width="7%" />
+<col width="81%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Tipo</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>id</td>
+<td>int</td>
+<td>Identificador único del paciente</td>
+</tr>
+<tr class="even">
+<td>age</td>
+<td>int</td>
+<td>Edad del paciente (en años)</td>
+</tr>
+<tr class="odd">
+<td>sex</td>
+<td>chr</td>
+<td>Sexo del paciente (Male / Female)</td>
+</tr>
+<tr class="even">
+<td>dataset</td>
+<td>chr</td>
+<td>Hospital/centro de origen de los datos (categórica)</td>
+</tr>
+<tr class="odd">
+<td>cp</td>
+<td>chr</td>
+<td>Tipo de dolor de pecho: angina típica, angina atípica, no anginal,
+asintomático</td>
+</tr>
+<tr class="even">
+<td>trestbps</td>
+<td>int</td>
+<td>Presión arterial en reposo al ingreso (mm Hg)</td>
+</tr>
+<tr class="odd">
+<td>chol</td>
+<td>int</td>
+<td>Colesterol sérico (mg/dl)</td>
+</tr>
+<tr class="even">
+<td>fbs</td>
+<td>logi</td>
+<td>Glucemia en ayunas &gt; 120 mg/dl (categórica binaria)</td>
+</tr>
+<tr class="odd">
+<td>restecg</td>
+<td>chr</td>
+<td>Resultado del electrocardiograma en reposo (normal, anomalía ST-T,
+hipertrofia ventricular izq.)</td>
+</tr>
+<tr class="even">
+<td>thalch</td>
+<td>int</td>
+<td>Frecuencia cardíaca máxima alcanzada</td>
+</tr>
+<tr class="odd">
+<td>exang</td>
+<td>logi</td>
+<td>Angina inducida por ejercicio (categórica binaria)</td>
+</tr>
+<tr class="even">
+<td>oldpeak</td>
+<td>num</td>
+<td>Depresión del segmento ST inducida por ejercicio respecto al
+reposo</td>
+</tr>
+<tr class="odd">
+<td>slope</td>
+<td>chr</td>
+<td>Pendiente del segmento ST en el pico del ejercicio (ascendente,
+plana, descendente)</td>
+</tr>
+<tr class="even">
+<td>ca</td>
+<td>int</td>
+<td>Número de vasos principales (0–3) coloreados por fluoroscopía</td>
+</tr>
+<tr class="odd">
+<td>thal</td>
+<td>chr</td>
+<td>Resultado de la prueba de talio (normal, defecto fijo, defecto
+reversible)</td>
+</tr>
+<tr class="even">
+<td>num</td>
+<td>int</td>
+<td>Severidad de la enfermedad cardíaca (0 = ausencia, 1–4 =
+presencia/grado) -&gt; Interpretación posterior</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div id="objetivos" class="section level3">
-<h3>Objetivos</h3>
+<h3>1.3 Objetivos</h3>
 <ol style="list-style-type: decimal">
 <li>Describir la estructura general del dataset, identificando sus
 variables, tipos de datos y características principales.</li>
@@ -435,25 +543,72 @@ pacientes según sus características clínicas principales, comparándolos
 contra la variable num (severidad diagnosticada).</li>
 </ol>
 </div>
+<div id="metodología" class="section level3">
+<h3>1.4 Metodología</h3>
+<p>El proyecto se desarrolla en R Markdown, con el objetivo de generar
+un documento HTML reproducible y ademas un repositorio en GitHub para
+colaborar y versionar el codigo. El análisis se realizará exclusivamente
+en R, utilizando funciones y librerías adecuadas para la lectura,
+limpieza, exploración, visualización y clusterización de los datos.</p>
+<p>La metodología se dividirá en las siguientes etapas:</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Carga de librerías:</strong><br />
+Se cargarán las librerías necesarias para manipulación de datos,
+visualización, análisis de correlación, PCA y clusterización.</p></li>
+<li><p><strong>Lectura del dataset:</strong><br />
+Se importará el archivo <code>heart_disease_uci.csv</code> y se revisará
+su estructura inicial.</p></li>
+<li><p><strong>Limpieza de datos:</strong><br />
+Se evaluarán valores faltantes, duplicados, tipos de variables y
+posibles inconsistencias.</p></li>
+<li><p><strong>Análisis exploratorio de datos:</strong><br />
+Se analizarán variables numéricas y categóricas mediante estadísticas
+descriptivas, tablas y gráficos.</p></li>
+<li><p><strong>Análisis de correlación:</strong><br />
+Se revisarán relaciones entre variables numéricas para identificar
+asociaciones importantes.</p></li>
+<li><p><strong>Preparación para clusterización:</strong><br />
+Se seleccionarán variables numéricas relevantes y se aplicará
+escalamiento para evitar que variables con valores más grandes dominen
+el análisis.</p></li>
+<li><p><strong>Análisis de Componentes Principales:</strong><br />
+Se aplicará PCA para evaluar si las variables numéricas pueden resumirse
+en menos componentes. La selección de componentes se justificará con
+base en la varianza explicada y la utilidad para visualizar los
+datos.</p></li>
+<li><p><strong>Clusterización:</strong><br />
+Se aplicará k-means y se evaluarán diferentes cantidades de clusters
+mediante métodos como el codo y la silueta.</p></li>
+<li><p><strong>Interpretación de resultados:</strong><br />
+Se describirán los grupos obtenidos y se analizarán sus principales
+características.</p></li>
+</ol>
+</div>
 </div>
 <div id="estructura-general-del-dataset" class="section level2">
 <h2>2. Estructura general del dataset</h2>
 <div id="carga-de-datos-y-librerías" class="section level3">
 <h3>2.1 Carga de datos y librerías</h3>
 <pre class="r"><code>library(readr)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Adjuntando el paquete: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>data &lt;- read.csv(&quot;data/raw/heart_disease_uci.csv&quot;)</code></pre>
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(FactoMineR)
+library(factoextra)
+library(cluster)
+data &lt;- read.csv(&quot;data/raw/heart_disease_uci.csv&quot;)</code></pre>
+</div>
+<div id="instanciacion-y-conversion-de-variables" class="section level3">
+<h3>2.2 Instanciacion y conversion de variables</h3>
+<pre class="r"><code>data$sex &lt;-  as.factor(data$sex)
+data$cp &lt;-  as.factor(data$cp)
+data$restecg &lt;-  as.factor(data$restecg)
+data$slope &lt;-  as.factor(data$slope)
+data$thal &lt;-  as.factor(data$thal)
+data$dataset &lt;- as.factor(data$dataset)</code></pre>
 </div>
 <div id="dimensiones-y-vista-general" class="section level3">
-<h3>2.2 Dimensiones y vista general</h3>
+<h3>2.3 Dimensiones y vista general</h3>
 <pre class="r"><code>dim(data)</code></pre>
 <pre><code>## [1] 920  16</code></pre>
 <pre class="r"><code>head(data)</code></pre>
@@ -473,7 +628,7 @@ library(dplyr)</code></pre>
 ## 6    178 FALSE     0.8   upsloping  0            normal   0</code></pre>
 </div>
 <div id="tipos-de-variables" class="section level3">
-<h3>2.3 Tipos de variables</h3>
+<h3>2.4 Tipos de variables</h3>
 <pre class="r"><code>str(data)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    920 obs. of  16 variables:
 ##  $ id      : int  1 2 3 4 5 6 7 8 9 10 ...
@@ -513,7 +668,7 @@ library(dplyr)</code></pre>
 ## $ num      &lt;int&gt; 0, 2, 1, 0, 0, 0, 3, 0, 2, 1, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0…</code></pre>
 </div>
 <div id="resumen-estadístico" class="section level3">
-<h3>2.4 Resumen estadístico</h3>
+<h3>2.5 Resumen estadístico</h3>
 <pre class="r"><code>summary(data)</code></pre>
 <pre><code>##        id             age            sex               dataset   
 ##  Min.   :  1.0   Min.   :28.00   Female:194   Cleveland    :304  
@@ -551,14 +706,12 @@ library(dplyr)</code></pre>
 </div>
 <div id="calidad-de-los-datos" class="section level2">
 <h2>3 Calidad de los datos</h2>
-<div id="nas" class="section level3">
-<h3>3.1 NAs</h3>
+<!-- ### 3.1 NAs -->
 <pre class="r"><code>colSums(is.na(data))</code></pre>
 <pre><code>##       id      age      sex  dataset       cp trestbps     chol      fbs 
 ##        0        0        0        0        0       59       30       90 
 ##  restecg   thalch    exang  oldpeak    slope       ca     thal      num 
 ##        0       55       55       62        0      611        0        0</code></pre>
-</div>
 </div>
 </div>
 

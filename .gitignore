@@ -1,0 +1,14 @@
+# Archivos de RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Informes compilados (¡No subas los HTML o PDF si se pueden generar con el Rmd!)
+*.html
+*.pdf
+
+# Archivos de datos procesados pesados (si aplica)
+data/processed/
+*.csv
+*.xlsx
