@@ -1,0 +1,627 @@
+---
+title: "Análisis Exploratorio y Clusterización de Pacientes con Enfermedad Cardíaca"
+author: "Isaac Rodríguez Zúñiga"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+
+body {
+  background-color: #E6F4F8;
+  color: #1A2B32;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h1.title {
+  color: #D32F2F;
+  font-weight: bold;
+  text-align: center;
+}
+
+h1, h2, h3 {
+  color: #1A2B32;
+  font-weight: bold;
+}
+
+h2 {
+  border-bottom: 3px solid #D32F2F;
+  padding-bottom: 6px;
+  margin-top: 30px;
+}
+
+.nav-pills > li > a {
+  color: #1A2B32;
+  font-weight: bold;
+}
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:focus,
+.nav-pills > li.active > a:hover {
+  background-color: #D32F2F;
+  color: white;
+}
+
+pre {
+  border-left: 5px solid #4FC3F7;
+  border-radius: 6px;
+}
+
+.card-heart {
+  background-color: white;
+  border-left: 6px solid #D32F2F;
+  padding: 15px;
+  margin: 15px 0;
+  border-radius: 10px;
+  box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
+}
+
+</style>
+
+# Información general {.tabset .tabset-pills}
+
+## Introducción
+
+<!-- PENDIENTE: contexto general sobre la enfermedad cardíaca y el valor de analizar
+     datos clínicos. Mencionar que el dataset proviene del repositorio UCI y que
+     combina registros de cuatro centros médicos distintos. -->
+
+## Descripción del dataset
+
+<!-- PENDIENTE: describir el archivo heart_disease_uci.csv, cantidad de filas y
+     columnas, qué representa cada fila (un paciente), y agrupar las variables en
+     identificación, clínicas numéricas, clínicas categóricas y variable objetivo. -->
+
+## Tabla descriptiva por variable
+
+| Variable | Tipo | Descripción |
+| :--- | :---: | :--- |
+| `id` | integer | Identificador único del paciente |
+| `age` | integer | Edad del paciente (en años) |
+| `sex` | character | Sexo del paciente (Male / Female) |
+| `dataset` | character | Hospital o centro de origen de los datos |
+| `cp` | character | Tipo de dolor de pecho: angina típica, angina atípica, no anginal, asintomático |
+| `trestbps` | integer | Presión arterial en reposo al ingreso (mm Hg) |
+| `chol` | integer | Colesterol sérico (mg/dl) |
+| `fbs` | logical | Glucemia en ayunas mayor a 120 mg/dl |
+| `restecg` | character | Resultado del electrocardiograma en reposo |
+| `thalch` | integer | Frecuencia cardíaca máxima alcanzada |
+| `exang` | logical | Angina inducida por ejercicio |
+| `oldpeak` | double | Depresión del segmento ST inducida por ejercicio respecto al reposo |
+| `slope` | character | Pendiente del segmento ST en el pico del ejercicio |
+| `ca` | integer | Número de vasos principales (0–3) coloreados por fluoroscopía |
+| `thal` | character | Resultado de la prueba de talio (normal, defecto fijo, defecto reversible) |
+| `num` | integer | Severidad de la enfermedad cardíaca (0 = ausencia, 1–4 = presencia) |
+
+## Justificación
+
+<!-- PENDIENTE: por qué este dataset sirve para EDA + PCA + clusterización.
+     Argumentos: mezcla de variables numéricas y categóricas clínicas, presencia
+     real de valores faltantes que obliga a un trabajo de calidad de datos, y
+     existencia de una variable de severidad que permite validar los clusters. -->
+
+## Objetivos
+
+**Objetivo general**
+
+Realizar un análisis exploratorio de datos y una clusterización sobre el dataset `heart_disease_uci.csv`, con el fin de identificar perfiles de pacientes con características clínicas similares y compararlos contra la severidad diagnosticada.
+
+**Objetivos específicos**
+
+1. Describir la estructura general del dataset, identificando sus variables, tipos de datos y características principales.
+
+2. Evaluar la calidad de los datos mediante la revisión de valores faltantes, duplicados, tipos de variables y posibles inconsistencias.
+
+3. Analizar las variables numéricas relacionadas con edad, presión arterial, colesterol, frecuencia cardíaca máxima y depresión del segmento ST.
+
+4. Explorar las variables categóricas como sexo, tipo de dolor de pecho, electrocardiograma en reposo, pendiente del segmento ST y talasemia.
+
+5. Visualizar distribuciones, relaciones y posibles valores atípicos mediante gráficos exploratorios.
+
+6. Analizar correlaciones entre variables numéricas para identificar asociaciones relevantes.
+
+7. Preparar los datos para clusterización mediante selección de variables numéricas, tratamiento de valores problemáticos y escalamiento.
+
+8. Aplicar Análisis de Componentes Principales para evaluar la reducción de dimensionalidad y comparar diferentes cantidades de componentes.
+
+9. Aplicar técnicas de clusterización, evaluando diferentes cantidades de grupos mediante métodos como el codo y la silueta.
+
+10. Interpretar los clusters obtenidos para describir perfiles de pacientes según sus características clínicas, comparándolos contra la variable `num`.
+
+11. Verificar si los grupos obtenidos reflejan diferencias clínicas reales o el centro médico de procedencia de los registros.
+
+## Metodología
+
+El proyecto se desarrolla en R Markdown, con el objetivo de generar un documento HTML reproducible, y además un repositorio en GitHub para colaborar y versionar el código. El análisis se realiza exclusivamente en R.
+
+La metodología se divide en las siguientes etapas:
+
+1. **Carga de librerías:** se cargarán las librerías necesarias para manipulación de datos, visualización, análisis de correlación, PCA y clusterización.
+
+2. **Lectura del dataset:** se importará el archivo `heart_disease_uci.csv` declarando explícitamente los valores que deben leerse como faltantes.
+
+3. **Limpieza de datos:** se evaluarán valores faltantes, duplicados, tipos de variables, valores imposibles y posibles inconsistencias.
+
+4. **Definición de la variable objetivo:** se decidirá el tratamiento de la variable `num` antes de utilizarla como referencia comparativa.
+
+5. **Análisis exploratorio de datos:** se analizarán variables numéricas y categóricas mediante estadísticas descriptivas, tablas y gráficos.
+
+6. **Análisis de correlación:** se revisarán relaciones entre variables numéricas para identificar asociaciones importantes.
+
+7. **Preparación para clusterización:** se seleccionarán variables numéricas relevantes, se tratarán los valores faltantes y se aplicará escalamiento.
+
+8. **Análisis de Componentes Principales:** se aplicará PCA para evaluar si las variables numéricas pueden resumirse en menos componentes.
+
+9. **Clusterización:** se aplicará k-means y se evaluarán diferentes cantidades de clusters mediante los métodos del codo y la silueta.
+
+10. **Interpretación de resultados:** se describirán los grupos obtenidos, se compararán contra la severidad diagnosticada y contra el centro de procedencia.
+
+# Lectura y limpieza de datos {.tabset .tabset-pills}
+
+## Carga de librerías
+
+En esta sección se cargan las librerías necesarias para trabajar con el dataset. Estas librerías permitirán leer los datos, manipular variables, crear gráficos, analizar correlaciones, aplicar PCA y realizar clusterización.
+
+```{r carga-librerias, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(FactoMineR)
+library(factoextra)
+library(cluster)
+```
+
+**Explicación del código:**  
+Este chunk carga las librerías principales del proyecto.  
+La librería `readr` se utilizará para leer archivos CSV.  
+La librería `dplyr` permitirá manipular y resumir los datos.  
+La librería `ggplot2` será utilizada para crear gráficos.  
+La librería `corrplot` servirá para visualizar matrices de correlación.  
+Las librerías `FactoMineR` y `factoextra` serán utilizadas para el PCA y su visualización.  
+Finalmente, la librería `cluster` apoyará el análisis de clusterización.
+
+## Lectura del dataset
+
+En esta sección se importa el archivo `heart_disease_uci.csv`. La lectura declara explícitamente qué cadenas deben interpretarse como valores faltantes, ya que este dataset contiene celdas vacías en varias variables categóricas.
+
+```{r lectura-dataset, message=FALSE}
+data <- read.csv(
+  "data/raw/heart_disease_uci.csv",
+  na.strings = c("", " ", "NA")
+)
+```
+
+**Explicación del código:**  
+La función `read.csv()` carga el archivo en un objeto llamado `data`.  
+El argumento `na.strings` indica que las celdas vacías y los espacios en blanco deben registrarse como `NA`. Sin este argumento, esas celdas se leerían como texto vacío y el conteo de valores faltantes no reflejaría la realidad del dataset.
+
+## Exploración inicial
+
+En esta sección se realiza una primera revisión del dataset para conocer su tamaño, estructura, nombres de columnas y primeros registros.
+
+```{r exploracion-inicial}
+dim(data)
+names(data)
+head(data, 5)
+glimpse(data)
+```
+
+**Explicación del código:**  
+La función `dim()` muestra la cantidad de filas y columnas.  
+La función `names()` muestra los nombres de las variables.  
+La función `head()` permite observar los primeros cinco registros.  
+La función `glimpse()` muestra una vista resumida de la estructura, incluyendo el tipo de dato de cada variable.
+
+<!-- PENDIENTE: comentar cantidad de filas y columnas obtenidas, y señalar que el
+     dataset combina variables numéricas, de texto y lógicas. -->
+
+## Conversión de variables
+
+En esta sección se convierten a factor todas las variables categóricas del dataset, incluyendo las binarias, para que R las trate correctamente en tablas y gráficos.
+
+```{r conversion-variables}
+# Variables categóricas nominales
+data$sex     <- as.factor(data$sex)
+data$dataset <- as.factor(data$dataset)
+data$cp      <- as.factor(data$cp)
+data$restecg <- as.factor(data$restecg)
+data$slope   <- as.factor(data$slope)
+data$thal    <- as.factor(data$thal)
+
+# Variables categóricas binarias
+data$fbs   <- as.factor(data$fbs)
+data$exang <- as.factor(data$exang)
+
+# Comprobar el resultado de la conversión
+str(data)
+sapply(data, class)
+```
+
+**Explicación del código:**  
+Cada llamada a `as.factor()` transforma una variable de texto o lógica en una variable categórica.  
+Se incluyen `fbs` y `exang` porque, aunque se leen como texto o valor lógico, la tabla descriptiva las define como variables categóricas binarias.  
+Las funciones `str()` y `sapply(data, class)` permiten verificar que la conversión se aplicó correctamente.
+
+## Valores faltantes
+
+En esta sección se cuantifican los valores faltantes de cada variable, tanto en cantidad absoluta como en porcentaje.
+
+```{r valores-faltantes}
+# Cantidad de valores faltantes por variable
+colSums(is.na(data))
+
+# Porcentaje de valores faltantes por variable
+round(colSums(is.na(data)) / nrow(data) * 100, 2)
+```
+
+**Explicación del código:**  
+La función `is.na()` genera una matriz lógica que indica qué celdas están vacías.  
+`colSums()` suma esos valores por columna para obtener la cantidad de faltantes de cada variable.  
+La segunda instrucción divide ese conteo entre el total de filas para expresar el resultado como porcentaje.
+
+<!-- PENDIENTE: identificar cuáles variables concentran la mayor proporción de
+     faltantes y anticipar cuáles podrían quedar fuera del PCA por esa razón. -->
+
+## Faltantes por centro médico
+
+El dataset reúne registros de cuatro centros distintos. Esta sección revisa si los valores faltantes se distribuyen de manera uniforme entre ellos, ya que un patrón concentrado en un centro puede afectar los análisis posteriores.
+
+```{r faltantes-por-centro}
+# Cantidad de registros por centro
+table(data$dataset)
+
+# Porcentaje de valores faltantes por variable dentro de cada centro
+data %>%
+  group_by(dataset) %>%
+  summarise(across(everything(), ~ round(mean(is.na(.x)) * 100, 1)))
+```
+
+**Explicación del código:**  
+`table()` muestra cuántos pacientes aporta cada centro.  
+El bloque con `group_by()` y `summarise(across(...))` calcula, dentro de cada centro, el porcentaje de valores faltantes de todas las variables. La función `mean(is.na(.x))` funciona como proporción porque el promedio de una serie de valores lógicos equivale a la fracción de casos verdaderos.
+
+<!-- PENDIENTE: comentar si algún centro concentra los faltantes. Este resultado
+     justifica la comprobación posterior de los clusters contra la variable dataset. -->
+
+## Valores imposibles y duplicados
+
+Algunas variables clínicas registran ceros que no son biológicamente posibles y que en realidad representan mediciones ausentes. En esta sección se identifican esos casos y se revisan los registros duplicados.
+
+```{r valores-imposibles}
+# Registros duplicados
+sum(duplicated(data))
+
+# Conteo de ceros en variables donde el valor cero no es posible
+sum(data$chol == 0, na.rm = TRUE)
+sum(data$trestbps == 0, na.rm = TRUE)
+
+# Valores negativos en oldpeak
+sum(data$oldpeak < 0, na.rm = TRUE)
+
+# Rangos de las variables numéricas
+summary(data[, c("age", "trestbps", "chol", "thalch", "oldpeak", "ca")])
+```
+
+**Explicación del código:**  
+`sum(duplicated(data))` cuenta las filas repetidas.  
+Las instrucciones siguientes cuentan cuántos registros presentan colesterol o presión arterial iguales a cero. Un colesterol de 0 mg/dl o una presión arterial de 0 mm Hg no son valores clínicamente posibles, por lo que corresponden a mediciones no realizadas.  
+También se cuentan los valores negativos de `oldpeak`, que sí son posibles en este examen y no deben tratarse como errores.  
+Finalmente, `summary()` muestra mínimos, máximos y cuartiles para confirmar los rangos de cada variable.
+
+```{r conversion-ceros}
+# Convertir los ceros imposibles en valores faltantes explícitos
+data <- data %>%
+  mutate(
+    chol     = ifelse(chol == 0, NA, chol),
+    trestbps = ifelse(trestbps == 0, NA, trestbps)
+  )
+
+# Recuento de faltantes después de la corrección
+colSums(is.na(data[, c("chol", "trestbps")]))
+```
+
+**Explicación del código:**  
+La función `ifelse()` reemplaza por `NA` los ceros de `chol` y `trestbps`. De esta forma esos valores se tratan como faltantes durante el análisis y no distorsionan promedios, histogramas ni distancias en la clusterización.
+
+## Variable objetivo
+
+La variable `num` registra la severidad de la enfermedad en una escala de 0 a 4. En esta sección se decide cómo se utilizará durante el análisis.
+
+```{r variable-objetivo}
+# Distribución original de la severidad
+table(data$num)
+
+# Versión binaria: ausencia frente a presencia de enfermedad
+data$enfermedad <- factor(
+  ifelse(data$num == 0, "Ausencia", "Presencia"),
+  levels = c("Ausencia", "Presencia")
+)
+
+table(data$enfermedad)
+```
+
+**Explicación del código:**  
+`table(data$num)` muestra cuántos pacientes hay en cada nivel de severidad.  
+Después se crea la variable `enfermedad`, que agrupa los niveles 1 a 4 en una sola categoría de presencia. Esta versión binaria facilita las comparaciones cuando algunos niveles de severidad tienen muy pocos pacientes.  
+Ambas versiones se conservan: `num` para analizar el grado y `enfermedad` para comparaciones generales.
+
+<!-- PENDIENTE: justificar cuál de las dos versiones se usará como referencia
+     principal al comparar los clusters. -->
+
+## Resumen de calidad de datos
+
+<!-- PENDIENTE: síntesis de los hallazgos anteriores. Debe responder al objetivo 2
+     resumiendo: cantidad de duplicados, variables con más faltantes, ceros
+     imposibles corregidos, distribución de faltantes entre centros y decisiones
+     tomadas sobre la variable objetivo. -->
+
+# Análisis exploratorio de datos {.tabset .tabset-pills}
+
+## Resumen estadístico
+
+<!-- PENDIENTE: párrafo introductorio. -->
+
+```{r resumen-estadistico}
+resumen_numerico <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak)
+
+summary(resumen_numerico)
+```
+
+**Explicación del código:**  
+<!-- PENDIENTE -->
+
+**Interpretación:**  
+<!-- PENDIENTE -->
+
+## Distribuciones numéricas
+
+<!-- PENDIENTE: histogramas y curvas de densidad de age, trestbps, chol, thalch
+     y oldpeak. Comentar simetría, sesgo y concentración de valores. -->
+
+```{r distribuciones}
+
+```
+
+## Valores atípicos
+
+<!-- PENDIENTE: boxplots de las variables numéricas escaladas, como en el proyecto
+     de referencia, para compararlas en un mismo gráfico. Decidir y justificar si
+     los outliers se conservan o se tratan. -->
+
+```{r valores-atipicos}
+
+```
+
+## Variables categóricas
+
+<!-- PENDIENTE: frecuencias y proporciones de sex, cp, restecg, slope, thal, fbs
+     y exang, acompañadas de gráficos de barras. Usar useNA = "ifany" en las
+     tablas para que los faltantes queden visibles. -->
+
+```{r variables-categoricas}
+
+```
+
+## Relación con la severidad
+
+<!-- PENDIENTE: tablas cruzadas y gráficos de barras apiladas de cada variable
+     categórica contra num o enfermedad. Responde a los objetivos 4 y 10. -->
+
+```{r categoricas-vs-severidad}
+
+```
+
+## Relaciones entre variables numéricas
+
+<!-- PENDIENTE: scatterplots entre pares relevantes (age vs thalch, oldpeak vs
+     thalch) y boxplots de variables numéricas agrupadas por categorías. -->
+
+```{r relaciones-numericas}
+
+```
+
+## Correlaciones
+
+<!-- PENDIENTE: matriz de correlación con use = "pairwise.complete.obs" por la
+     presencia de faltantes, y visualización con corrplot. -->
+
+```{r correlaciones}
+
+```
+
+**Interpretación:**  
+<!-- PENDIENTE: identificar las asociaciones más fuertes y señalar si alguna pareja
+     de variables aporta información redundante para el PCA. -->
+
+# Análisis de Componentes Principales {.tabset .tabset-pills}
+
+## Selección de variables
+
+<!-- PENDIENTE: seleccionar las variables numéricas que entrarán al PCA.
+     Justificar explícitamente la exclusión de id por ser un identificador, y
+     decidir si ca entra o se descarta por su alta proporción de faltantes.
+     Justificar también por qué las variables categóricas quedan fuera. -->
+
+```{r seleccion-variables-pca}
+
+```
+
+## Tratamiento de valores faltantes
+
+<!-- PENDIENTE: decidir entre eliminación de filas incompletas o imputación, y
+     reportar cuántos pacientes quedan disponibles después del tratamiento. -->
+
+```{r tratamiento-na}
+
+```
+
+## Escalamiento
+
+<!-- PENDIENTE: estandarizar con scale() y comprobar que las medias queden en cero
+     y las desviaciones estándar en uno. -->
+
+```{r escalamiento}
+
+```
+
+## Aplicación del PCA
+
+```{r aplicacion-pca}
+
+```
+
+## Varianza explicada
+
+<!-- PENDIENTE: tabla y gráfico de varianza explicada y acumulada. Justificar la
+     cantidad de componentes retenidos. -->
+
+```{r varianza-explicada}
+
+```
+
+## Contribución de las variables
+
+<!-- PENDIENTE: cargas de las variables en PC1 y PC2, y gráficos de contribución. -->
+
+```{r contribucion-variables}
+
+```
+
+## Visualización del PCA
+
+<!-- PENDIENTE: círculo de correlación y mapa de individuos, coloreando los puntos
+     según la severidad para observar si los grupos se distinguen visualmente. -->
+
+```{r visualizacion-pca}
+
+```
+
+# Clusterización {.tabset .tabset-pills}
+
+## Preparación para clusterización
+
+<!-- PENDIENTE: construir el conjunto final de datos escalados, comprobar
+     dimensiones y ausencia de valores no finitos. -->
+
+```{r preparacion-cluster}
+set.seed(123)
+```
+
+**Explicación del código:**  
+La función `set.seed()` fija el generador de números aleatorios. Esto es necesario porque k-means inicia sus centroides de forma aleatoria y, sin una semilla fija, cada ejecución del documento produciría clusters distintos. Fijarla garantiza que los resultados descritos en la interpretación coincidan con los que genera el documento al ser compilado nuevamente.
+
+## Método del codo
+
+```{r metodo-codo}
+
+```
+
+## Método de silueta
+
+```{r metodo-silueta}
+
+```
+
+## Aplicación de k-means
+
+<!-- PENDIENTE: aplicar kmeans con la cantidad de clusters seleccionada, usando
+     nstart = 25 para reducir la dependencia de la inicialización aleatoria. -->
+
+```{r aplicacion-kmeans}
+
+```
+
+## Visualización de clusters
+
+<!-- PENDIENTE: representar los clusters sobre los dos primeros componentes
+     principales y comentar el grado de solapamiento observado. -->
+
+```{r visualizacion-clusters}
+
+```
+
+# Interpretación de resultados {.tabset .tabset-pills}
+
+## Perfil de cada cluster
+
+<!-- PENDIENTE: tabla con los promedios de cada variable original por cluster y
+     descripción de cada perfil en términos clínicos. -->
+
+```{r perfil-clusters}
+
+```
+
+## Comparación contra la severidad
+
+<!-- PENDIENTE: tabla cruzada entre cluster y num (o enfermedad) para evaluar si
+     los grupos obtenidos coinciden con la severidad diagnosticada. Responde
+     directamente al objetivo 10. -->
+
+```{r clusters-vs-severidad}
+
+```
+
+## Comprobación contra el centro médico
+
+<!-- PENDIENTE: tabla cruzada entre cluster y dataset. Si un cluster corresponde
+     casi por completo a un solo hospital, el agrupamiento estaría reflejando
+     diferencias de registro y no perfiles clínicos. Responde al objetivo 11. -->
+
+```{r clusters-vs-centro}
+
+```
+
+# Conclusiones y cierre {.tabset .tabset-pills}
+
+## Conclusiones generales
+
+<!-- PENDIENTE: recorrer los diez objetivos y responder cada uno con los
+     resultados obtenidos. -->
+
+## Limitaciones del análisis
+
+<!-- PENDIENTE: mencionar la alta proporción de faltantes en algunas variables, la
+     exclusión de las variables categóricas del agrupamiento, las limitaciones de
+     k-means frente a grupos de forma irregular y el alcance restringido a los
+     cuatro centros incluidos en el dataset. -->
+
+## Referencias
+
+<div class="card-heart">
+Las siguientes fuentes respaldan el origen del dataset, las herramientas de R y las técnicas estadísticas utilizadas en el proyecto.
+</div>
+
+Janosi, A., Steinbrunn, W., Pfisterer, M., & Detrano, R. (1989). *Heart Disease* [Conjunto de datos]. UCI Machine Learning Repository. https://archive.ics.uci.edu/dataset/45/heart+disease
+
+Kassambara, A., & Mundt, F. (2020). *factoextra: Extract and visualize the results of multivariate data analyses* [Paquete de R]. CRAN. https://CRAN.R-project.org/package=factoextra
+
+R Core Team. (2026). *R: A language and environment for statistical computing*. R Foundation for Statistical Computing. https://www.R-project.org/
+
+R Core Team. (s. f.). *K-means clustering*. R Documentation. https://search.r-project.org/R/refmans/stats/html/kmeans.html
+
+R Core Team. (s. f.). *Principal components analysis*. R Documentation. https://search.r-project.org/R/refmans/stats/html/prcomp.html
+
+Wickham, H., François, R., Henry, L., Müller, K., & Vaughan, D. (2023). *dplyr: A grammar of data manipulation* [Paquete de R]. CRAN. https://CRAN.R-project.org/package=dplyr
+
+Wickham, H., Navarro, D., & Pedersen, T. L. (2025). *ggplot2: Elegant graphics for data analysis* (3.ª ed.). Springer. https://ggplot2-book.org/
+
+## Información de la sesión
+
+```{r session-info}
+sessionInfo()
+```
+
+**Explicación del código:**  
+La función `sessionInfo()` documenta la versión de R y de cada paquete utilizado. Esta información permite que otra persona reproduzca el análisis en las mismas condiciones.
