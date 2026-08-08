@@ -72,15 +72,27 @@ pre {
 
 ## Introducción
 
-<!-- PENDIENTE: contexto general sobre la enfermedad cardíaca y el valor de analizar
-     datos clínicos. Mencionar que el dataset proviene del repositorio UCI y que
-     combina registros de cuatro centros médicos distintos. -->
+El análisis de datos se ha convertido en una herramienta fundamental para apoyar la toma de decisiones en el ámbito de la salud. A través del estudio de grandes volúmenes de información clínica es posible identificar patrones, relaciones entre variables y factores que pueden contribuir al diagnóstico oportuno de diversas enfermedades.
+
+Las enfermedades cardiovasculares representan una de las principales causas de muerte a nivel mundial, por lo que comprender los factores asociados con su aparición resulta de gran importancia para el desarrollo de estrategias de prevención, diagnóstico y tratamiento. En este contexto, la ciencia de datos permite analizar información proveniente de pacientes para descubrir tendencias que difícilmente podrían identificarse mediante una revisión manual.
+
+El presente proyecto utiliza el conjunto de datos Heart Disease UCI, ampliamente utilizado en investigaciones y prácticas de análisis de datos, el cual reúne información clínica de pacientes evaluados por posible enfermedad cardíaca. A partir de este conjunto de datos se desarrollará un proceso completo de análisis exploratorio, limpieza, selección de variables y modelado mediante técnicas de minería de datos, con el propósito de identificar patrones relevantes y obtener información que facilite la comprensión del comportamiento de los pacientes.
+
+Durante el desarrollo del proyecto se aplicarán diferentes técnicas de análisis exploratorio de datos (EDA), reducción de dimensionalidad mediante Análisis de Componentes Principales (PCA) y agrupamiento utilizando el algoritmo K-Means, permitiendo descubrir relaciones entre las variables y segmentar pacientes con características similares. Cada etapa será acompañada de un análisis e interpretación de los resultados obtenidos, buscando no solo ejecutar procedimientos estadísticos, sino también generar conocimiento útil a partir de los datos.
 
 ## Descripción del dataset
 
-<!-- PENDIENTE: describir el archivo heart_disease_uci.csv, cantidad de filas y
-     columnas, qué representa cada fila (un paciente), y agrupar las variables en
-     identificación, clínicas numéricas, clínicas categóricas y variable objetivo. -->
+El conjunto de datos utilizado corresponde a información clínica relacionada con pacientes evaluados para determinar la presencia de enfermedad cardíaca.
+
+El dataset contiene registros de pacientes con diferentes características demográficas, clínicas y resultados de pruebas médicas. Estas variables permiten analizar factores asociados con la presencia de enfermedad cardiovascular y encontrar patrones dentro de la población estudiada.
+
+El conjunto de datos contiene 920 observaciones y 16 variables, donde se incluyen variables numéricas y categóricas relacionadas con edad, sexo, presión arterial, colesterol, frecuencia cardíaca, resultados de pruebas clínicas y diagnóstico de enfermedad cardíaca.
+
+La variable objetivo principal es num, la cual representa la presencia de enfermedad cardíaca con valores que van desde 0 hasta 4, donde valores mayores representan diferentes niveles de presencia de enfermedad.
+
+Para efectos del análisis, esta variable fue transformada posteriormente en una clasificación binaria, donde: - 0 representa ausencia de enfermedad cardíaca. - Valores mayores que 0 representan presencia de enfermedad cardíaca.
+
+Esta transformación permite realizar análisis comparativos y facilitar la interpretación de los resultados obtenidos durante las etapas exploratorias y de modelado. # Diccionario de variables
 
 ## Tabla descriptiva por variable
 
@@ -105,10 +117,13 @@ pre {
 
 ## Justificación
 
-<!-- PENDIENTE: por qué este dataset sirve para EDA + PCA + clusterización.
-     Argumentos: mezcla de variables numéricas y categóricas clínicas, presencia
-     real de valores faltantes que obliga a un trabajo de calidad de datos, y
-     existencia de una variable de severidad que permite validar los clusters. -->
+Las enfermedades cardiovasculares representan una de las principales causas de mortalidad a nivel mundial, por lo que su detección temprana y la comprensión de los factores clínicos asociados resultan fundamentales para la toma de decisiones en el ámbito de la salud pública. El presente proyecto se justifica en la necesidad de aplicar técnicas de análisis exploratorio de datos y aprendizaje no supervisado sobre información clínica real, con el fin de identificar patrones y agrupaciones de pacientes que compartan características similares en relación con la presencia de enfermedad cardíaca.
+
+Desde el punto de vista académico, este trabajo permite poner en práctica los conocimientos adquiridos en el curso sobre limpieza de datos, análisis de calidad, reducción de dimensionalidad mediante Componentes Principales (PCA) y técnicas de clusterización como K-means, integrando así un flujo completo de análisis de datos aplicado a un caso de uso realista.
+
+Desde el punto de vista práctico, comprender qué variables clínicas se asocian con mayor frecuencia a la presencia de enfermedad cardíaca, y cómo se agrupan los pacientes según sus características, puede aportar información valiosa como insumo preliminar para estudios posteriores orientados a la prevención y el diagnóstico temprano, sin que esto sustituya el criterio médico profesional.
+
+Por ende, se considera pertinente y relevante desarrollar este análisis sobre el dataset Heart Disease UCI, dado que ofrece un conjunto de variables demográficas y clínicas suficientemente amplio y representativo para responder a la pregunta de investigación planteada.
 
 ## Objetivos
 
