@@ -211,10 +211,8 @@ Finalmente, la librería `cluster` apoyará el análisis de clusterización.
 En esta sección se importa el archivo `heart_disease_uci.csv`. La lectura declara explícitamente qué cadenas deben interpretarse como valores faltantes, ya que este dataset contiene celdas vacías en varias variables categóricas.
 
 ```{r lectura-dataset, message=FALSE}
-data <- read.csv(
-  "data/raw/heart_disease_uci.csv",
-  na.strings = c("", " ", "NA")
-)
+data <- read.csv("data/raw/heart_disease_uci.csv",
+  na.strings = c("", " ", "NA"))
 ```
 
 **Explicación del código:**  
@@ -223,7 +221,7 @@ El argumento `na.strings` indica que las celdas vacías y los espacios en blanco
 
 ## Exploración inicial
 
-En esta sección se realiza una primera revisión del dataset para conocer su tamaño, estructura, nombres de columnas y primeros registros.
+En esta sección se realiza una primera revisión del dataset para conocer su tamaño, estructura, nombres de columnas y primeros registros.Se explora las dimensiones que consisten de 920 fila y 16 columnas, además de un vista a las primeras cinco filas del data así como la estructura del dataset original que combina variables númericas, de tipo texto y logicas.
 
 ```{r exploracion-inicial}
 dim(data)
@@ -231,15 +229,6 @@ names(data)
 head(data, 5)
 glimpse(data)
 ```
-
-**Explicación del código:**  
-La función `dim()` muestra la cantidad de filas y columnas.  
-La función `names()` muestra los nombres de las variables.  
-La función `head()` permite observar los primeros cinco registros.  
-La función `glimpse()` muestra una vista resumida de la estructura, incluyendo el tipo de dato de cada variable.
-
-<!-- PENDIENTE: comentar cantidad de filas y columnas obtenidas, y señalar que el
-     dataset combina variables numéricas, de texto y lógicas. -->
 
 ## Conversión de variables
 
@@ -263,30 +252,42 @@ str(data)
 sapply(data, class)
 ```
 
-**Explicación del código:**  
-Cada llamada a `as.factor()` transforma una variable de texto o lógica en una variable categórica.  
+## Instanciación de variables
+
+Apartado dedicado a la instaciación de variables requeridas durante todo el proyecto.
+
+```{r Instanciacion}
+# dataset: Cleveland
+data_CLE <- data %>% filter(dataset == "Cleveland")
+# dataset: Hungary
+data_HUN <- data %>% filter(dataset == "Hungary")
+# dataset: Switzerland
+data_CHE <- data %>% filter(dataset == "Switzerland")
+# dataset: VA Long Beach
+data_VAL <- data %>% filter(dataset == "VA Long Beach")
+```
+
+
 Se incluyen `fbs` y `exang` porque, aunque se leen como texto o valor lógico, la tabla descriptiva las define como variables categóricas binarias.  
 Las funciones `str()` y `sapply(data, class)` permiten verificar que la conversión se aplicó correctamente.
 
 ## Valores faltantes
 
 En esta sección se cuantifican los valores faltantes de cada variable, tanto en cantidad absoluta como en porcentaje.
+Las variables `ca` y `thal` tienen un porcentaje de 66.41 y 52.83, respectivamente.Por lo cual son variables candidatas a ser eliminadas debido a su alto porcentaje de valores faltantes, en la siguiente sección se analiza los valores faltantes por cada centro médico.  
+
 
 ```{r valores-faltantes}
-# Cantidad de valores faltantes por variable
+# Cantidad de NAs
 colSums(is.na(data))
-
-# Porcentaje de valores faltantes por variable
+# Porcentaje de NAs
 round(colSums(is.na(data)) / nrow(data) * 100, 2)
 ```
 
-**Explicación del código:**  
+**Explicación: **  
 La función `is.na()` genera una matriz lógica que indica qué celdas están vacías.  
 `colSums()` suma esos valores por columna para obtener la cantidad de faltantes de cada variable.  
 La segunda instrucción divide ese conteo entre el total de filas para expresar el resultado como porcentaje.
-
-<!-- PENDIENTE: identificar cuáles variables concentran la mayor proporción de
-     faltantes y anticipar cuáles podrían quedar fuera del PCA por esa razón. -->
 
 ## Faltantes por centro médico
 
@@ -297,17 +298,25 @@ El dataset reúne registros de cuatro centros distintos. Esta sección revisa si
 table(data$dataset)
 
 # Porcentaje de valores faltantes por variable dentro de cada centro
-data %>%
-  group_by(dataset) %>%
-  summarise(across(everything(), ~ round(mean(is.na(.x)) * 100, 1)))
+na_CLE <- round(colSums(is.na(data_CLE))/ nrow(data_CLE) * 100, 2)
+na_HUN <- round(colSums(is.na(data_HUN))/ nrow(data_HUN) * 100, 2)
+na_CHE <- round(colSums(is.na(data_CHE))/ nrow(data_CHE) * 100, 2)
+na_VAL <- round(colSums(is.na(data_VAL))/ nrow(data_VAL) * 100, 2)
+
+# Unir valores en una tabla
+table_na <- rbind(na_CLE, na_HUN, na_CHE, na_VAL)
+rownames(table_na) <- c("Cleveland",       "Hungary",   "Switzerland", "VA Long Beach")
+t(table_na)
 ```
 
-**Explicación del código:**  
-`table()` muestra cuántos pacientes aporta cada centro.  
-El bloque con `group_by()` y `summarise(across(...))` calcula, dentro de cada centro, el porcentaje de valores faltantes de todas las variables. La función `mean(is.na(.x))` funciona como proporción porque el promedio de una serie de valores lógicos equivale a la fracción de casos verdaderos.
+**Explicación:**
 
-<!-- PENDIENTE: comentar si algún centro concentra los faltantes. Este resultado
-     justifica la comprobación posterior de los clusters contra la variable dataset. -->
+-  Se instancian los valores faltantes por cada centro medico: `Cleveland` `Hungary` `Switzerland` `VA Long Beach`.
+
+-  Luego se unen los resultados en una tabla que comprendan todos los valores faltantes. Se observa como los valores faltantes se distribuyen en su gran mayoría en los centros médicos de `Hungary` `Switzerland` `VA Long Beach`.
+
+-  Por ende el centro médico con la información más consistente es `Cleveland` donde el porcentaje más alto de valores NAs es de 1.64, esto debido a que en este centro médico realizó de manera consistente todos los examenes y pruebas. 
+
 
 ## Valores imposibles y duplicados
 
