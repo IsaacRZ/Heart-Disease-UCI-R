@@ -542,23 +542,43 @@ summary(resumen_numerico)
 
 ## Selección de variables
 
-<!-- PENDIENTE: seleccionar las variables numéricas que entrarán al PCA.
-     Justificar explícitamente la exclusión de id por ser un identificador, y
-     decidir si ca entra o se descarta por su alta proporción de faltantes.
-     Justificar también por qué las variables categóricas quedan fuera. -->
+- Para el análisis de componentes principales se seleccionaron las variables cuantitativas relevantes para la variable objetivo: age, trestbps, chol, thalch y oldpeak. Se excluyó la variable id, dado que corresponde a un identificador y no aporta información relevante al análisis. Las variables categóricas también fueron descartadas, ya que, aunque es posible aplicar codificación disyuntiva completa, esta suele distorsionar los cálculos de varianza y covarianza en los que se basa el PCA. Asimismo, no se incluyó la variable ca debido a su alta proporción de valores nulos; sin embargo, se considerará más adelante, junto con thal y slope, para la comparación e interpretación de los clústeres resultantes.
 
 ```{r seleccion-variables-pca}
-
+datos_pca <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak)
 ```
+
+**Explicación del código:** 
+
+Se toman las columnas seleccionadas para el pca del set de datos original y se guardan en una nueva variable
 
 ## Tratamiento de valores faltantes
 
-<!-- PENDIENTE: decidir entre eliminación de filas incompletas o imputación, y
-     reportar cuántos pacientes quedan disponibles después del tratamiento. -->
+- Volvemos a vertificar nulos despues de la limpieza previa y seleccion de columnas
+
+```{r}
+colSums(is.na(datos_pca))
+```
+
+- La variable chol es la única variable con valores faltantes pendiente de manejar, pero conserva valor para la clusterización. Se decidió imputarla mediante la mediana; sin embargo, dado que se observa un patrón en los faltantes donde el porcentaje de nulos varía según el grupo, la imputación se manejará de forma diferenciada. Para el grupo donde falta el 100% de los datos, se utilizará la mediana global; mientras que, para los grupos con un porcentaje menor de nulos, se imputará mediante la mediana calculada por grupo.
 
 ```{r tratamiento-na}
+mediana_global <- median(data$chol, na.rm = TRUE)
 
+datos_pca <- datos_pca %>%
+  mutate(dataset = data$dataset) %>%
+  group_by(dataset) %>%
+  mutate(chol = case_when(
+    all(is.na(chol)) ~ mediana_global,
+    is.na(chol) ~ median(chol, na.rm = TRUE),
+    TRUE ~ chol
+  )) %>%
+  ungroup()
 ```
+
+**Explicación del código:** 
+- Primero se calcula la mediana global de chol, excluyendo los valores nulos del cálculo (na.rm = TRUE), la cual se utiliza para imputar el dataset Switzerland, donde falta el 100% de los datos. Luego, mediante case_when() dentro de un group_by(dataset), se calcula una mediana propia para cada uno de los demás grupos (como Long Beach y Hungary), y se utiliza esa mediana específica para imputar sus valores faltantes según corresponda.
 
 ## Escalamiento
 
