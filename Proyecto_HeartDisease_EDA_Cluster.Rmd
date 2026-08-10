@@ -463,7 +463,7 @@ La última instrucción confirma que ya no quedan faltantes en esas tres variabl
 
 ## Resumen estadístico
 
-<!-- PENDIENTE: párrafo introductorio. -->
+Se analizan las variables númericas con las que se llevará a cabo el analisis exploratorio de datos con el objetivo de examinar las estadisticas básicas de las variables: 
 
 ```{r resumen-estadistico}
 resumen_numerico <- data %>%
@@ -472,20 +472,43 @@ resumen_numerico <- data %>%
 summary(resumen_numerico)
 ```
 
-**Explicación del código:**  
-<!-- PENDIENTE -->
-
-**Interpretación:**  
-<!-- PENDIENTE -->
+**Explicación:**  
+  La función `summary()` muestra mínimos, máximos y cuartiles para confirmar los rangos de cada variable númerica. Se observa como en comparación a los resumenes anteriores los mínimos para `trestbps` y `chol` cambiaron de cero a 80.0 y 85.0, respectivamente. También los valores de la mediana para el colesterol se aumentó en 16.5 unidades, y la media aumentó en 47.7 unidades, al convertir los ceros clinicamente imposibles a valores faltantes.
 
 ## Distribuciones numéricas
 
-<!-- PENDIENTE: histogramas y curvas de densidad de age, trestbps, chol, thalch
-     y oldpeak. Comentar simetría, sesgo y concentración de valores. -->
+En esta sección se examina la forma de la distribución de cada variable numérica mediante histogramas con curva de densidad.
 
-```{r distribuciones}
+```{r distribuciones, warning=FALSE, message=FALSE}
+# Pasar las variables numéricas a formato largo para graficarlas juntas
+numericas_largo <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "variable",
+    values_to = "valor"
+  ) %>%
+  filter(!is.na(valor))
 
+# Histogramas con curva de densidad
+ggplot(numericas_largo, aes(x = valor)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30, fill = "#4FC3F7", color = "white") +
+  geom_density(color = "#D32F2F", linewidth = 1) +
+  facet_wrap(~ variable, scales = "free") +
+  labs(
+    title = "Distribución de las variables numéricas",
+    x     = "Valor",
+    y     = "Densidad"
+  ) +
+  theme_minimal()
 ```
+
+**Explicación:**  
+La función `pivot_longer()` reorganiza las cinco variables en dos columnas, una con el nombre de la variable y otra con el valor. Este formato permite graficar todas las variables en un mismo bloque.  
+`geom_histogram()` construye el histograma y `geom_density()` superpone la curva de densidad, que muestra la forma general de la distribución sin depender de la cantidad de barras.  
+`facet_wrap()` genera un panel por variable, y el argumento `scales = "free"` permite que cada panel utilice su propia escala, lo cual es necesario porque las variables tienen rangos muy distintos.
+
 
 ## Valores atípicos
 
@@ -710,7 +733,6 @@ barplot(
 )
 
 par(mfrow = c(1, 1))
-```
 ```
 
 ### Interpretación de las variables categóricas
