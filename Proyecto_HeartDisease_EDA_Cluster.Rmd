@@ -489,23 +489,247 @@ summary(resumen_numerico)
 
 ## Valores atípicos
 
-<!-- PENDIENTE: boxplots de las variables numéricas escaladas, como en el proyecto
-     de referencia, para compararlas en un mismo gráfico. Decidir y justificar si
-     los outliers se conservan o se tratan. -->
+```{r}
+variables_numericas <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak, ca)
 
-```{r valores-atipicos}
-
+head(variables_numericas)
 ```
+
+```{r}
+outliers_tabla <- data.frame(
+  Variable = c("age", "trestbps", "chol", "thalch", "oldpeak", "ca"),
+  Cantidad_Outliers = c(
+    sum(
+      data$age < quantile(data$age, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$age, na.rm = TRUE) |
+      data$age > quantile(data$age, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$age, na.rm = TRUE),
+      na.rm = TRUE
+    ),
+    
+    sum(
+      data$trestbps < quantile(data$trestbps, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$trestbps, na.rm = TRUE) |
+      data$trestbps > quantile(data$trestbps, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$trestbps, na.rm = TRUE),
+      na.rm = TRUE
+    ),
+    
+    sum(
+      data$chol < quantile(data$chol, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$chol, na.rm = TRUE) |
+      data$chol > quantile(data$chol, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$chol, na.rm = TRUE),
+      na.rm = TRUE
+    ),
+    
+    sum(
+      data$thalch < quantile(data$thalch, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$thalch, na.rm = TRUE) |
+      data$thalch > quantile(data$thalch, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$thalch, na.rm = TRUE),
+      na.rm = TRUE
+    ),
+    
+    sum(
+      data$oldpeak < quantile(data$oldpeak, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$oldpeak, na.rm = TRUE) |
+      data$oldpeak > quantile(data$oldpeak, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$oldpeak, na.rm = TRUE),
+      na.rm = TRUE
+    ),
+    
+    sum(
+      data$ca < quantile(data$ca, 0.25, na.rm = TRUE) -
+        1.5 * IQR(data$ca, na.rm = TRUE) |
+      data$ca > quantile(data$ca, 0.75, na.rm = TRUE) +
+        1.5 * IQR(data$ca, na.rm = TRUE),
+      na.rm = TRUE
+    )
+  )
+)
+
+outliers_tabla
+```
+
+```{r}
+datos_escalados <- as.data.frame(
+  scale(variables_numericas)
+)
+```
+
+```{r}
+boxplot(
+  datos_escalados,
+  main = "Boxplots de variables numericas estandarizadas",
+  xlab = "Variables",
+  ylab = "Valores estandarizados",
+  las = 2
+)
+```
+
+### Interpretación de los valores atípicos
+
+La identificación de valores atípicos se realizó mediante el criterio del rango intercuartílico (IQR) y se complementó con diagramas de caja utilizando las variables numéricas estandarizadas.
+
+Los resultados muestran que la variable `age` no presenta valores atípicos según este criterio. En contraste, `chol` presenta la mayor cantidad de valores atípicos, con 183 observaciones identificadas, seguida por `trestbps` con 28, `ca` con 20 y `oldpeak` con 16. La variable `thalch` presenta únicamente 2 valores atípicos.
+
+La presencia de valores atípicos no implica necesariamente que correspondan a errores en los datos. Debido a que el conjunto de datos corresponde a información clínica, estos valores pueden representar pacientes con características reales y relevantes.
+
+Por esta razón, se decidió conservar los valores atípicos estadísticamente identificados cuando son clínicamente plausibles, evitando su eliminación automática. Esta decisión permite mantener la variabilidad original del conjunto de datos y reducir el riesgo de perder información relevante para los análisis posteriores.
+
+En consecuencia, los valores atípicos serán considerados durante las siguientes etapas del análisis, pero no serán eliminados únicamente por encontrarse fuera de los límites establecidos mediante el criterio IQR.
 
 ## Variables categóricas
 
-<!-- PENDIENTE: frecuencias y proporciones de sex, cp, restecg, slope, thal, fbs
-     y exang, acompañadas de gráficos de barras. Usar useNA = "ifany" en las
-     tablas para que los faltantes queden visibles. -->
+```{r}
+variables_categoricas <- data %>%
+  select(
+    sex,
+    cp,
+    restecg,
+    slope,
+    thal,
+    fbs,
+    exang
+  )
 
-```{r variables-categoricas}
-
+head(variables_categoricas)
 ```
+
+```{r}
+frecuencias_categoricas <- bind_rows(
+  
+  data.frame(
+    Variable = "sex",
+    Categoria = ifelse(is.na(data$sex), "Faltante", as.character(data$sex))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "cp",
+    Categoria = ifelse(is.na(data$cp), "Faltante", as.character(data$cp))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "restecg",
+    Categoria = ifelse(is.na(data$restecg), "Faltante", as.character(data$restecg))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "slope",
+    Categoria = ifelse(is.na(data$slope), "Faltante", as.character(data$slope))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "thal",
+    Categoria = ifelse(is.na(data$thal), "Faltante", as.character(data$thal))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "fbs",
+    Categoria = ifelse(is.na(data$fbs), "Faltante", as.character(data$fbs))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia"),
+  
+  data.frame(
+    Variable = "exang",
+    Categoria = ifelse(is.na(data$exang), "Faltante", as.character(data$exang))
+  ) %>%
+    count(Variable, Categoria, name = "Frecuencia")
+)
+
+frecuencias_categoricas <- frecuencias_categoricas %>%
+  group_by(Variable) %>%
+  mutate(
+    Porcentaje = round(
+      Frecuencia / sum(Frecuencia) * 100,
+      2
+    )
+  ) %>%
+  ungroup()
+
+frecuencias_categoricas
+```
+
+```{r}
+par(mfrow = c(3, 3))
+
+barplot(
+  table(ifelse(is.na(data$sex), "Faltante", data$sex)),
+  main = "Sex",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$cp), "Faltante", data$cp)),
+  main = "Chest Pain",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$restecg), "Faltante", data$restecg)),
+  main = "Rest ECG",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$slope), "Faltante", data$slope)),
+  main = "Slope",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$thal), "Faltante", data$thal)),
+  main = "Thal",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$fbs), "Faltante", data$fbs)),
+  main = "Fasting Blood Sugar",
+  col = "steelblue",
+  las = 2
+)
+
+barplot(
+  table(ifelse(is.na(data$exang), "Faltante", data$exang)),
+  main = "Exercise Angina",
+  col = "steelblue",
+  las = 2
+)
+
+par(mfrow = c(1, 1))
+```
+```
+
+### Interpretación de las variables categóricas
+
+Las variables categóricas muestran diferentes distribuciones dentro del conjunto de datos. En la variable `sex`, se observa un predominio de pacientes de sexo masculino, quienes representan el 78.91% de las observaciones, mientras que las pacientes de sexo femenino representan el 21.09%.
+
+En cuanto al tipo de dolor torácico (`cp`), la categoría más frecuente es `asymptomatic`, con un 53.91% de los casos. Le siguen `non-anginal` con 22.17%, `atypical angina` con 18.91% y `typical angina` con 5.00%.
+
+Para `restecg`, la categoría predominante es `normal`, con 59.89% de las observaciones. También se identifican casos de `lv hypertrophy` (20.43%) y `st-t abnormality` (19.46%), además de un pequeño porcentaje de valores faltantes (0.22%).
+
+La variable `slope` presenta una mayor frecuencia en la categoría `flat`, con 37.50%, seguida de `upsloping` con 22.07% y `downsloping` con 6.85%. Además, presenta un 33.59% de valores faltantes.
+
+En la variable `thal`, la categoría `normal` representa el 21.30% y `reversable defect` el 20.87%, mientras que `fixed defect` representa el 5.00%. Esta variable presenta una proporción considerable de valores faltantes, correspondiente al 52.83%.
+
+Para `fbs`, el 75.22% de los pacientes presenta un valor `FALSE`, mientras que el 15.00% presenta `TRUE`. El 9.78% corresponde a valores faltantes.
+
+Finalmente, en `exang`, el 57.39% de las observaciones corresponde a `FALSE` y el 36.63% a `TRUE`, mientras que el 5.98% corresponde a valores faltantes.
+
+En general, las variables categóricas presentan distribuciones desiguales entre sus categorías y algunas muestran una cantidad importante de valores faltantes, particularmente `thal` y `slope`. Estas características deben ser consideradas en las etapas posteriores del análisis.
 
 ## Relación con la severidad
 
