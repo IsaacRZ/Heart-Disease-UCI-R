@@ -197,6 +197,7 @@ library(corrplot)
 library(FactoMineR)
 library(factoextra)
 library(cluster)
+library(knitr)
 ```
 
 **Explicación:**  
@@ -205,7 +206,8 @@ La librería `readr` se utilizará para leer archivos CSV.
 La librería `dplyr` permitirá manipular y resumir los datos.  
 La librería `ggplot2` será utilizada para crear gráficos.  
 La librería `corrplot` servirá para visualizar matrices de correlación.  
-Las librerías `FactoMineR` y `factoextra` serán utilizadas para el PCA y su visualización.  
+Las librerías `FactoMineR` y `factoextra` serán utilizadas para el PCA y su visualización.
+La librería `knitr` sera utilizada para visualizar tablas.
 Finalmente, la librería `cluster` apoyará el análisis de clusterización.
 
 ## Lectura del dataset
@@ -561,7 +563,7 @@ Se toman las columnas seleccionadas para el pca del set de datos original y se g
 colSums(is.na(datos_pca))
 ```
 
-- La variable chol es la única variable con valores faltantes pendiente de manejar, pero conserva valor para la clusterización. Se decidió imputarla mediante la mediana; sin embargo, dado que se observa un patrón en los faltantes donde el porcentaje de nulos varía según el grupo, la imputación se manejará de forma diferenciada. Para el grupo donde falta el 100% de los datos, se utilizará la mediana global; mientras que, para los grupos con un porcentaje menor de nulos, se imputará mediante la mediana calculada por grupo.
+- La variable chol es la única variable con valores faltantes pendiente de manejar, pero conserva valor para la clusterización. Se decidió imputarla mediante la mediana ya que no se ve afectada por valores atipicos existentes; sin embargo, dado que se observa un patrón en los faltantes donde el porcentaje de nulos varía según el grupo, la imputación se manejará de forma diferenciada. Para el grupo donde falta el 100% de los datos, se utilizará la mediana global; mientras que, para los grupos con un porcentaje menor de nulos, se imputará mediante la mediana calculada por grupo.
 
 ```{r tratamiento-na}
 mediana_global <- median(data$chol, na.rm = TRUE)
@@ -574,34 +576,56 @@ datos_pca <- datos_pca %>%
     is.na(chol) ~ median(chol, na.rm = TRUE),
     TRUE ~ chol
   )) %>%
-  ungroup()
+  ungroup() %>%
+  select(-dataset)
 ```
 
 **Explicación del código:** 
 - Primero se calcula la mediana global de chol, excluyendo los valores nulos del cálculo (na.rm = TRUE), la cual se utiliza para imputar el dataset Switzerland, donde falta el 100% de los datos. Luego, mediante case_when() dentro de un group_by(dataset), se calcula una mediana propia para cada uno de los demás grupos (como Long Beach y Hungary), y se utiliza esa mediana específica para imputar sus valores faltantes según corresponda.
 
-## Escalamiento
+-Verificamos que el procedimiento haya sido correcto sin presencia de nulos
 
-<!-- PENDIENTE: estandarizar con scale() y comprobar que las medias queden en cero
-     y las desviaciones estándar en uno. -->
-
-```{r escalamiento}
-
+```{r}
+colSums(is.na(datos_pca))
 ```
 
-## Aplicación del PCA
+## Aplicación del PCA y escalamiento
+
+- Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial. Todo esto sin indicarle mediante codigo la cantidad de componentes de salida para que automaticamente genere los que cree necesarios.
 
 ```{r aplicacion-pca}
-
+resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 3)
 ```
+
+```{r}
+summary(resultado_pca)
+```
+
+
+**Explicación del código:** 
+-Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
 
 ## Varianza explicada
 
 <!-- PENDIENTE: tabla y gráfico de varianza explicada y acumulada. Justificar la
      cantidad de componentes retenidos. -->
 
-```{r varianza-explicada}
+```{r}
+kable(resultado_pca$eig, digits = 2)
+```
 
+```{r varianza-explicada}
+varianza_df <- as.data.frame(resultado_pca$eig)
+varianza_df$componente <- factor(rownames(varianza_df), levels = rownames(varianza_df))
+
+ggplot(varianza_df, aes(x = componente)) +
+  geom_col(aes(y = `percentage of variance`), fill = "steelblue") +
+  geom_line(aes(y = `cumulative percentage of variance`, group = 1), color = "darkred", linewidth = 1) +
+  geom_point(aes(y = `cumulative percentage of variance`), color = "darkred", size = 2) +
+  geom_hline(yintercept = 80, linetype = "dashed", color = "gray40") +
+  labs(title = "Varianza explicada y acumulada por componente",
+       x = "Componente", y = "Porcentaje de varianza (%)") +
+  theme_minimal()
 ```
 
 ## Contribución de las variables
@@ -609,8 +633,27 @@ datos_pca <- datos_pca %>%
 <!-- PENDIENTE: cargas de las variables en PC1 y PC2, y gráficos de contribución. -->
 
 ```{r contribucion-variables}
-
+kable(resultado_pca$var$contrib, digits = 2)
 ```
+
+```{r}
+library(factoextra)
+fviz_pca_var(resultado_pca, col.var = "contrib", 
+             gradient.cols = c("blue", "yellow", "red"),
+             repel = TRUE)
+```
+
+```{r}
+fviz_pca_var(resultado_pca, axes = c(1, 3), col.var = "contrib", repel = TRUE)
+```
+
+
+```{r}
+fviz_contrib(resultado_pca, choice = "var", axes = 1)   
+fviz_contrib(resultado_pca, choice = "var", axes = 2)   
+fviz_contrib(resultado_pca, choice = "var", axes = 3)  
+```
+
 
 ## Visualización del PCA
 
@@ -618,7 +661,13 @@ datos_pca <- datos_pca %>%
      según la severidad para observar si los grupos se distinguen visualmente. -->
 
 ```{r visualizacion-pca}
+severidad <- as.factor(data$num)
 
+fviz_pca_ind(resultado_pca,
+             geom = "point",
+             habillage = severidad,   # vector con la categoría de cada individuo
+             addEllipses = TRUE,
+             repel = TRUE)
 ```
 
 # Clusterización {.tabset .tabset-pills}
