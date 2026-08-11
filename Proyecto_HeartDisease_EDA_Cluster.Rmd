@@ -1,12 +1,13 @@
 ---
 title: "Análisis Exploratorio y Clusterización de Pacientes con Enfermedad Cardíaca"
-author: "
-Sebastián Flores Figueroa
-Jeriel Fonseca Ramirez
-Roberto Gonzalez Gomez
-Isaac Rodríguez Zúñiga
-Gabriel Aaron Solano Molina
-"
+author:
+  - "Sebastián Flores Figueroa"
+  - "Jeriel Fonseca Ramirez"
+  - "Roberto Gonzalez Gomez"
+  - "Isaac Rodríguez Zúñiga"
+  - "Gabriel Aaron Solano Molina"
+---
+---
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -90,6 +91,11 @@ pre {
 
 
 ```{r child-pca, child='secciones/03-pca.Rmd'}
+
+```
+
+
+```{r child-clustering, child='secciones/04-clustering.Rmd'}
 
 ```
 
