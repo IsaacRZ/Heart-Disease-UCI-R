@@ -1,8 +1,7 @@
 # Análisis de Componentes Principales {.tabset .tabset-pills}
 
 ## Selección de variables
-
-- Para el análisis de componentes principales se seleccionaron las variables cuantitativas relevantes para la variable objetivo: age, trestbps, chol, thalch y oldpeak. Se excluyó la variable id, dado que corresponde a un identificador y no aporta información relevante al análisis. Las variables categóricas también fueron descartadas, ya que, aunque es posible aplicar codificación disyuntiva completa, esta suele distorsionar los cálculos de varianza y covarianza en los que se basa el PCA. Asimismo, no se incluyó la variable ca debido a su alta proporción de valores nulos; sin embargo, se considerará más adelante, junto con thal y slope, para la comparación e interpretación de los clústeres resultantes.
+Para el análisis de componentes principales se seleccionaron las variables cuantitativas relevantes para la variable objetivo: age, trestbps, chol, thalch y oldpeak. Se excluyó la variable id, dado que corresponde a un identificador y no aporta información relevante al análisis. Las variables categóricas también fueron descartadas, ya que, aunque es posible aplicar codificación disyuntiva completa, esta suele distorsionar los cálculos de varianza y covarianza en los que se basa el PCA. Asimismo, no se incluyó la variable ca debido a su alta proporción de valores nulos; sin embargo, se considerará más adelante, junto con thal y slope, para la comparación e interpretación de los clústeres resultantes.
 
 ```{r seleccion-variables-pca}
 datos_pca <- data %>%
@@ -13,15 +12,23 @@ datos_pca <- data %>%
 
 Se toman las columnas seleccionadas para el pca del set de datos original y se guardan en una nueva variable
 
+Posteriormente se realiza una matriz de correlacion entre las variables seleccionadas y se observa una relación débil entre la mayoría de las variables seleccionadas, con excepción de age y thalch, que presentan una correlación moderadamente negativa. No obstante, se decide continuar con la aplicación del PCA, considerando que aun una correlación débil entre algunas variables puede aportar cierta reducción de dimensionalidad. Este hallazgo es consistente con los resultados obtenidos en la sección de varianza explicada, donde se requirió un mayor número de componentes de lo esperado para alcanzar un porcentaje aceptable de varianza acumulada.
+
+```{r}
+matriz_cor <- cor(datos_pca, use = "complete.obs")
+corrplot(matriz_cor, method = "number", type = "upper")
+```
+
+
 ## Tratamiento de valores faltantes
 
-- Volvemos a vertificar nulos despues de la limpieza previa y seleccion de columnas
+Volvemos a verificar nulos despues de la limpieza previa y seleccion de columnas
 
 ```{r}
 colSums(is.na(datos_pca))
 ```
 
-- La variable chol es la única variable con valores faltantes pendiente de manejar, pero conserva valor para la clusterización. Se decidió imputarla mediante la mediana ya que no se ve afectada por valores atipicos existentes; sin embargo, dado que se observa un patrón en los faltantes donde el porcentaje de nulos varía según el grupo, la imputación se manejará de forma diferenciada. Para el grupo donde falta el 100% de los datos, se utilizará la mediana global; mientras que, para los grupos con un porcentaje menor de nulos, se imputará mediante la mediana calculada por grupo.
+La variable chol es la única variable con valores faltantes pendiente de manejar, pero conserva valor para la clusterización. Se decidió imputarla mediante la mediana ya que no se ve afectada por valores atipicos existentes; sin embargo, dado que se observa un patrón en los faltantes donde el porcentaje de nulos varía según el grupo, la imputación se manejará de forma diferenciada. Para el grupo donde falta el 100% de los datos, se utilizará la mediana global; mientras que, para los grupos con un porcentaje menor de nulos, se imputará mediante la mediana calculada por grupo.
 
 ```{r tratamiento-na}
 mediana_global <- median(data$chol, na.rm = TRUE)
@@ -41,7 +48,7 @@ datos_pca <- datos_pca %>%
 **Explicación del código:** 
 Primero se calcula la mediana global de chol, excluyendo los valores nulos del cálculo (na.rm = TRUE), la cual se utiliza para imputar el dataset Switzerland, donde falta el 100% de los datos. Luego, mediante case_when() dentro de un group_by(dataset), se calcula una mediana propia para cada uno de los demás grupos (como Long Beach y Hungary), y se utiliza esa mediana específica para imputar sus valores faltantes según corresponda.
 
--Verificamos que el procedimiento haya sido correcto sin presencia de nulos
+Verificamos que el procedimiento haya sido correcto sin presencia de nulos
 
 ```{r}
 colSums(is.na(datos_pca))
@@ -49,28 +56,40 @@ colSums(is.na(datos_pca))
 
 ## Aplicación del PCA y escalamiento
 
-- Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial.
+Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial.
 
 ```{r aplicacion-pca}
 resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 4)
 ```
 
+**Explicación del código:** 
+Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos, que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
+
+
 ```{r}
 summary(resultado_pca)
 ```
 
-
-**Explicación del código:** 
-Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
+Podemos ver de forma numerica los pesos otorgados individualmente por cada dimension y su peso o varianza acumulada donde ya podemos darnos una idea de con cuantos componentes nos podemos manejar y que con cuatro se llega a un 88% de varianza explicada pero tomando en cuenta que la reduccion de dimensionalidad no seria tan grande como se esperaba.
 
 ## Varianza explicada
 
-<!-- PENDIENTE: tabla y gráfico de varianza explicada y acumulada. Justificar la
-     cantidad de componentes retenidos. -->
+En este apartado, se analizará mediante una tabla y una representación gráfica la varianza de los componentes, lo que permitirá obtener una mejor interpretación de los resultados obtenidos tras la aplicación del PCA al conjunto de variables seleccionadas.
+
 
 ```{r}
 kable(resultado_pca$eig, digits = 2)
 ```
+
+**Explicación del código:** 
+Mediante la librería `knitr` y, específicamente, la función `kable()`, se generó una tabla con los porcentajes de varianza individual y acumulada de cada componente, redondeados a dos decimales.
+
+**Analisis:**
+Mediante los autovalores y los porcentajes de varianza individual mostrados en la tabla, se observa que los dos primeros componentes capturan una parte importante de la variabilidad de los datos. Sin embargo, su varianza acumulada resulta insuficiente para considerar únicamente estos dos componentes, lo cual resultaría óptimo en términos de parsimonia de no ser por esta limitación. Al incluir el tercer componente, se alcanza aproximadamente un 71% de varianza acumulada, cumpliendo con el mínimo recomendado. De esta manera, se sacrifica cierta cantidad de varianza en favor de una mayor reducción dimensional. Por otro lado, al incluir un cuarto componente, se alcanza un 88% de varianza acumulada, lo que ofrece una representación más robusta de los datos, aunque con una reducción de dimensionalidad menos notable.
+
+**Gráfico**
+
+Se representará gráficamente la varianza explicada y la varianza acumulada por cada componente, lo que permitirá complementar y clarificar las observaciones realizadas anteriormente. Además, mediante el método del codo, observado a partir de la línea de varianza acumulada, podremos identificar visualmente el punto a partir del cual la incorporación de nuevos componentes aporta una mejora cada vez menor en la varianza explicada. Esto permitirá determinar un número adecuado de componentes, buscando un equilibrio entre la varianza explicada y la reducción de la dimensionalidad.
 
 ```{r varianza-explicada}
 varianza_df <- as.data.frame(resultado_pca$eig)
@@ -86,9 +105,16 @@ ggplot(varianza_df, aes(x = componente)) +
   theme_minimal()
 ```
 
+**Explicación del código:** 
+Se crea una variable a partir de los autovalores y porcentajes de varianza contenidos en el resultado del PCA, y se convierte en un data frame. De esta variable se extraen los nombres de los componentes (almacenados originalmente como nombres de fila) y se convierten en una columna de tipo factor, necesaria para graficar con ggplot2. Posteriormente, se construye el gráfico mediante la librería ggplot2 para observar la varianza explicada individual y acumulada, y así identificar visualmente dónde se forma el codo.
+
+**Analisis:**
+Se observa de manera gráfica y más clara cómo el codo se ubica en el componente 4, siendo este el punto ideal de varianza explicada en el PCA. Resulta comprensible que este punto se ubique más lejos de lo esperado (los primeros dos componentes), dada la baja correlación observada entre las variables seleccionadas.
+Considerando la mayor cantidad de varianza explicada, se decide retener los cuatro primeros componentes para los análisis posteriores.
+
 ## Contribución de las variables
 
-<!-- PENDIENTE: cargas de las variables en PC1 y PC2, y gráficos de contribución. -->
+Se analizará, mediante tablas y gráficos, la contribución de cada variable a los distintos componentes, así como el peso que cada una de ellas tiene en la composición de cada componente.
 
 ```{r contribucion-variables}
 kable(resultado_pca$var$contrib, digits = 2)
@@ -101,16 +127,15 @@ fviz_pca_var(resultado_pca, col.var = "contrib",
              repel = TRUE)
 ```
 
-```{r}
-fviz_pca_var(resultado_pca, axes = c(1, 3), col.var = "contrib", repel = TRUE)
-```
 
 
 ```{r}
 fviz_contrib(resultado_pca, choice = "var", axes = 1)   
 fviz_contrib(resultado_pca, choice = "var", axes = 2)   
 fviz_contrib(resultado_pca, choice = "var", axes = 3)  
+fviz_contrib(resultado_pca, choice = "var", axes = 4)  
 ```
+
 
 
 ## Visualización del PCA
@@ -127,3 +152,6 @@ fviz_pca_ind(resultado_pca,
              addEllipses = TRUE,
              repel = TRUE)
 ```
+
+**Justificacion de uso de PCA:**
+Si bien la reducción de dimensionalidad lograda mediante PCA fue moderada (de 5 variables a 4 componentes), dado el bajo nivel de correlación entre la mayoría de las variables originales, la aplicación de esta técnica continúa siendo pertinente antes de la clusterización. Esto se debe a que PCA transforma las variables en componentes ortogonales (no correlacionados entre sí), lo cual evita que la correlación moderada existente entre variables como age y thalch distorsione el cálculo de distancias en el algoritmo de clustering. Adicionalmente, permite descartar el componente de menor varianza (PC5), reduciendo parcialmente el ruido presente en los datos originales.
