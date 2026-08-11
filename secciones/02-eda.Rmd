@@ -294,31 +294,111 @@ En general, las variables categóricas presentan distribuciones desiguales entre
 
 ## Relación con la severidad
 
-<!-- PENDIENTE: tablas cruzadas y gráficos de barras apiladas de cada variable
-     categórica contra num o enfermedad. Responde a los objetivos 4 y 10. -->
+
+```{r}
+nrow(data)
+length(data$sex)
+length(data$enfermedad)
+"enfermedad" %in% names(data)
+"sex" %in% names(data)
+```
 
 ```{r categoricas-vs-severidad}
+# Tablas cruzadas: variable categórica vs enfermedad
+tabla_sex     <- table(data$sex, data$enfermedad)
+tabla_cp      <- table(data$cp, data$enfermedad)
+tabla_restecg <- table(data$restecg, data$enfermedad)
+tabla_slope   <- table(data$slope, data$enfermedad)
+tabla_thal    <- table(data$thal, data$enfermedad)
+tabla_fbs     <- table(data$fbs, data$enfermedad)
+tabla_exang   <- table(data$exang, data$enfermedad)
 
+# Proporciones por fila (para comparar dentro de cada categoría)
+round(prop.table(tabla_sex, margin = 1) * 100, 1)
+round(prop.table(tabla_cp, margin = 1) * 100, 1)
+round(prop.table(tabla_restecg, margin = 1) * 100, 1)
+round(prop.table(tabla_slope, margin = 1) * 100, 1)
+round(prop.table(tabla_thal, margin = 1) * 100, 1)
+round(prop.table(tabla_fbs, margin = 1) * 100, 1)
+round(prop.table(tabla_exang, margin = 1) * 100, 1)
+
+# Gráficos de barras apiladas
+graficar_barras <- function(variable, titulo) {
+  ggplot(data, aes(x = .data[[variable]], fill = enfermedad)) +
+    geom_bar(position = "fill") +
+    scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+    labs(title = titulo, x = variable, y = "Proporción", fill = "Enfermedad") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+graficar_barras("sex", "Enfermedad según sexo")
+graficar_barras("cp", "Enfermedad según tipo de dolor torácico")
+graficar_barras("restecg", "Enfermedad según electrocardiograma en reposo")
+graficar_barras("slope", "Enfermedad según pendiente del segmento ST")
+graficar_barras("thal", "Enfermedad según resultado de talasemia")
+graficar_barras("fbs", "Enfermedad según glucemia en ayunas")
+graficar_barras("exang", "Enfermedad según angina inducida por ejercicio")
 ```
 
 ## Relaciones entre variables numéricas
 
-<!-- PENDIENTE: scatterplots entre pares relevantes (age vs thalch, oldpeak vs
-     thalch) y boxplots de variables numéricas agrupadas por categorías. -->
-
+#Scatterplots entre pares relevantes, coloreados por severidad
 ```{r relaciones-numericas}
+ggplot(data, aes(x = age, y = thalch, color = enfermedad)) +
+  geom_point(alpha = 0.5) +
+  scale_color_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Edad vs frecuencia cardíaca máxima",
+       x = "Edad", y = "Frecuencia cardíaca máxima", color = "Enfermedad") +
+  theme_minimal()
 
+ggplot(data, aes(x = oldpeak, y = thalch, color = enfermedad)) +
+  geom_point(alpha = 0.5) +
+  scale_color_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Depresión del ST vs frecuencia cardíaca máxima",
+       x = "Oldpeak", y = "Frecuencia cardíaca máxima", color = "Enfermedad") +
+  theme_minimal()
+
+# Boxplots de variables numéricas agrupadas por severidad
+numericas_severidad <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak, enfermedad) %>%
+  tidyr::pivot_longer(
+    cols      = c(age, trestbps, chol, thalch, oldpeak),
+    names_to  = "variable",
+    values_to = "valor"
+  ) %>%
+  filter(!is.na(valor))
+
+ggplot(numericas_severidad, aes(x = enfermedad, y = valor, fill = enfermedad)) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales = "free") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Variables numéricas según presencia de enfermedad",
+       x = "Enfermedad", y = "Valor") +
+  theme_minimal()
 ```
 
 ## Correlaciones
 
-<!-- PENDIENTE: matriz de correlación con use = "pairwise.complete.obs" por la
-     presencia de faltantes, y visualización con corrplot. -->
-
 ```{r correlaciones}
+# Matriz de correlación (pairwise.complete.obs por presencia de NAs)
+variables_cor <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak, ca)
 
+matriz_cor <- cor(variables_cor, use = "pairwise.complete.obs")
+round(matriz_cor, 2)
+
+# Visualización
+corrplot(matriz_cor,
+  method = "color",
+  type = "upper",
+  addCoef.col = "black",
+  tl.col = "#1A2B32",
+  tl.srt = 45,
+  col = colorRampPalette(c("#4FC3F7", "white", "#D32F2F"))(200),
+  number.cex = 0.8
+)
 ```
 
 **Interpretación:**  
-<!-- PENDIENTE: identificar las asociaciones más fuertes y señalar si alguna pareja
-     de variables aporta información redundante para el PCA. -->
+Las asociaciones más fuertes son age con ca (0.37, positiva) y age con thalch (-0.38, negativa), seguidas de oldpeak con ca (0.28) y age con oldpeak (0.27); todas de magnitud moderada y clínicamente coherentes, ya que a mayor edad suele haber más vasos afectados y menor frecuencia cardíaca máxima, y una mayor depresión del segmento ST tiende a acompañarse de más vasos comprometidos. Ninguna correlación supera 0.40 en valor absoluto, así que no hay ninguna pareja con asociación fuerte que indique redundancia, por lo que las seis variables numéricas pueden conservarse para el PCA.
