@@ -594,7 +594,7 @@ colSums(is.na(datos_pca))
 - Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial. Todo esto sin indicarle mediante codigo la cantidad de componentes de salida para que automaticamente genere los que cree necesarios.
 
 ```{r aplicacion-pca}
-resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 3)
+resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 4)
 ```
 
 ```{r}
