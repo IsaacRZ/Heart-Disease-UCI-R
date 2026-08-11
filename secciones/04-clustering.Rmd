@@ -1,0 +1,43 @@
+# Clusterización {.tabset .tabset-pills}
+
+## Preparación para clusterización
+
+<!-- PENDIENTE: construir el conjunto final de datos escalados, comprobar
+     dimensiones y ausencia de valores no finitos. -->
+
+```{r preparacion-cluster}
+set.seed(123)
+```
+
+**Explicación del código:**  
+La función `set.seed()` fija el generador de números aleatorios. Esto es necesario porque k-means inicia sus centroides de forma aleatoria y, sin una semilla fija, cada ejecución del documento produciría clusters distintos. Fijarla garantiza que los resultados descritos en la interpretación coincidan con los que genera el documento al ser compilado nuevamente.
+
+## Método del codo
+
+```{r metodo-codo}
+
+```
+
+## Método de silueta
+
+```{r metodo-silueta}
+
+```
+
+## Aplicación de k-means
+
+<!-- PENDIENTE: aplicar kmeans con la cantidad de clusters seleccionada, usando
+     nstart = 25 para reducir la dependencia de la inicialización aleatoria. -->
+
+```{r aplicacion-kmeans}
+
+```
+
+## Visualización de clusters
+
+<!-- PENDIENTE: representar los clusters sobre los dos primeros componentes
+     principales y comentar el grado de solapamiento observado. -->
+
+```{r visualizacion-clusters}
+
+```

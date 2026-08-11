@@ -1,0 +1,113 @@
+
+# Información general {.tabset .tabset-pills}
+
+## Introducción
+
+El análisis de datos se ha convertido en una herramienta fundamental para apoyar la toma de decisiones en el ámbito de la salud. A través del estudio de grandes volúmenes de información clínica es posible identificar patrones, relaciones entre variables y factores que pueden contribuir al diagnóstico oportuno de diversas enfermedades.
+
+Las enfermedades cardiovasculares representan una de las principales causas de muerte a nivel mundial, por lo que comprender los factores asociados con su aparición resulta de gran importancia para el desarrollo de estrategias de prevención, diagnóstico y tratamiento. En este contexto, la ciencia de datos permite analizar información proveniente de pacientes para descubrir tendencias que difícilmente podrían identificarse mediante una revisión manual.
+
+El presente proyecto utiliza el conjunto de datos Heart Disease UCI, ampliamente utilizado en investigaciones y prácticas de análisis de datos, el cual reúne información clínica de pacientes evaluados por posible enfermedad cardíaca. A partir de este conjunto de datos se desarrollará un proceso completo de análisis exploratorio, limpieza, selección de variables y modelado mediante técnicas de minería de datos, con el propósito de identificar patrones relevantes y obtener información que facilite la comprensión del comportamiento de los pacientes.
+
+Durante el desarrollo del proyecto se aplicarán diferentes técnicas de análisis exploratorio de datos (EDA), reducción de dimensionalidad mediante Análisis de Componentes Principales (PCA) y agrupamiento utilizando el algoritmo K-Means, permitiendo descubrir relaciones entre las variables y segmentar pacientes con características similares. Cada etapa será acompañada de un análisis e interpretación de los resultados obtenidos, buscando no solo ejecutar procedimientos estadísticos, sino también generar conocimiento útil a partir de los datos.
+
+## Descripción del dataset
+
+El conjunto de datos utilizado corresponde a información clínica relacionada con pacientes evaluados para determinar la presencia de enfermedad cardíaca.
+
+El dataset contiene registros de pacientes con diferentes características demográficas, clínicas y resultados de pruebas médicas. Estas variables permiten analizar factores asociados con la presencia de enfermedad cardiovascular y encontrar patrones dentro de la población estudiada.
+
+El conjunto de datos contiene 920 observaciones y 16 variables, donde se incluyen variables numéricas y categóricas relacionadas con edad, sexo, presión arterial, colesterol, frecuencia cardíaca, resultados de pruebas clínicas y diagnóstico de enfermedad cardíaca.
+
+La variable objetivo principal es num, la cual representa la presencia de enfermedad cardíaca con valores que van desde 0 hasta 4, donde valores mayores representan diferentes niveles de presencia de enfermedad.
+
+Para efectos del análisis, esta variable fue transformada posteriormente en una clasificación binaria, donde: - 0 representa ausencia de enfermedad cardíaca. - Valores mayores que 0 representan presencia de enfermedad cardíaca.
+
+Esta transformación permite realizar análisis comparativos y facilitar la interpretación de los resultados obtenidos durante las etapas exploratorias y de modelado. # Diccionario de variables
+
+## Tabla descriptiva por variable
+
+| Variable | Tipo | Descripción |
+| :--- | :---: | :--- |
+| `id` | integer | Identificador único del paciente |
+| `age` | integer | Edad del paciente (en años) |
+| `sex` | character | Sexo del paciente (Male / Female) |
+| `dataset` | character | Hospital o centro de origen de los datos |
+| `cp` | character | Tipo de dolor de pecho: angina típica, angina atípica, no anginal, asintomático |
+| `trestbps` | integer | Presión arterial en reposo al ingreso (mm Hg) |
+| `chol` | integer | Colesterol sérico (mg/dl) |
+| `fbs` | logical | Glucemia en ayunas mayor a 120 mg/dl |
+| `restecg` | character | Resultado del electrocardiograma en reposo |
+| `thalch` | integer | Frecuencia cardíaca máxima alcanzada |
+| `exang` | logical | Angina inducida por ejercicio |
+| `oldpeak` | double | Depresión del segmento ST inducida por ejercicio respecto al reposo |
+| `slope` | character | Pendiente del segmento ST en el pico del ejercicio |
+| `ca` | integer | Número de vasos principales (0–3) coloreados por fluoroscopía |
+| `thal` | character | Resultado de la prueba de talio (normal, defecto fijo, defecto reversible) |
+| `num` | integer | Severidad de la enfermedad cardíaca (0 = ausencia, 1–4 = presencia) |
+
+## Justificación
+
+Las enfermedades cardiovasculares representan una de las principales causas de mortalidad a nivel mundial, por lo que su detección temprana y la comprensión de los factores clínicos asociados resultan fundamentales para la toma de decisiones en el ámbito de la salud pública. El presente proyecto se justifica en la necesidad de aplicar técnicas de análisis exploratorio de datos y aprendizaje no supervisado sobre información clínica real, con el fin de identificar patrones y agrupaciones de pacientes que compartan características similares en relación con la presencia de enfermedad cardíaca.
+
+Desde el punto de vista académico, este trabajo permite poner en práctica los conocimientos adquiridos en el curso sobre limpieza de datos, análisis de calidad, reducción de dimensionalidad mediante Componentes Principales (PCA) y técnicas de clusterización como K-means, integrando así un flujo completo de análisis de datos aplicado a un caso de uso realista.
+
+Desde el punto de vista práctico, comprender qué variables clínicas se asocian con mayor frecuencia a la presencia de enfermedad cardíaca, y cómo se agrupan los pacientes según sus características, puede aportar información valiosa como insumo preliminar para estudios posteriores orientados a la prevención y el diagnóstico temprano, sin que esto sustituya el criterio médico profesional.
+
+Por ende, se considera pertinente y relevante desarrollar este análisis sobre el dataset Heart Disease UCI, dado que ofrece un conjunto de variables demográficas y clínicas suficientemente amplio y representativo para responder a la pregunta de investigación planteada.
+
+## Objetivos
+
+**Objetivo general**
+
+Realizar un análisis exploratorio de datos y una clusterización sobre el dataset `heart_disease_uci.csv`, con el fin de identificar perfiles de pacientes con características clínicas similares y compararlos contra la severidad diagnosticada.
+
+**Objetivos específicos**
+
+1. Describir la estructura general del dataset, identificando sus variables, tipos de datos y características principales.
+
+2. Evaluar la calidad de los datos mediante la revisión de valores faltantes, duplicados, tipos de variables y posibles inconsistencias.
+
+3. Analizar las variables numéricas relacionadas con edad, presión arterial, colesterol, frecuencia cardíaca máxima y depresión del segmento ST.
+
+4. Explorar las variables categóricas como sexo, tipo de dolor de pecho, electrocardiograma en reposo, pendiente del segmento ST y talasemia.
+
+5. Visualizar distribuciones, relaciones y posibles valores atípicos mediante gráficos exploratorios.
+
+6. Analizar correlaciones entre variables numéricas para identificar asociaciones relevantes.
+
+7. Preparar los datos para clusterización mediante selección de variables numéricas, tratamiento de valores problemáticos y escalamiento.
+
+8. Aplicar Análisis de Componentes Principales para evaluar la reducción de dimensionalidad y comparar diferentes cantidades de componentes.
+
+9. Aplicar técnicas de clusterización, evaluando diferentes cantidades de grupos mediante métodos como el codo y la silueta.
+
+10. Interpretar los clusters obtenidos para describir perfiles de pacientes según sus características clínicas, comparándolos contra la variable `num`.
+
+11. Verificar si los grupos obtenidos reflejan diferencias clínicas reales o el centro médico de procedencia de los registros.
+
+## Metodología
+
+El proyecto se desarrolla en R Markdown, con el objetivo de generar un documento HTML reproducible, y además un repositorio en GitHub para colaborar y versionar el código. El análisis se realiza exclusivamente en R.
+
+La metodología se divide en las siguientes etapas:
+
+1. **Carga de librerías:** se cargarán las librerías necesarias para manipulación de datos, visualización, análisis de correlación, PCA y clusterización.
+
+2. **Lectura del dataset:** se importará el archivo `heart_disease_uci.csv` declarando explícitamente los valores que deben leerse como faltantes.
+
+3. **Limpieza de datos:** se evaluarán valores faltantes, duplicados, tipos de variables, valores imposibles y posibles inconsistencias.
+
+4. **Definición de la variable objetivo:** se decidirá el tratamiento de la variable `num` antes de utilizarla como referencia comparativa.
+
+5. **Análisis exploratorio de datos:** se analizarán variables numéricas y categóricas mediante estadísticas descriptivas, tablas y gráficos.
+
+6. **Análisis de correlación:** se revisarán relaciones entre variables numéricas para identificar asociaciones importantes.
+
+7. **Preparación para clusterización:** se seleccionarán variables numéricas relevantes, se tratarán los valores faltantes y se aplicará escalamiento.
+
+8. **Análisis de Componentes Principales:** se aplicará PCA para evaluar si las variables numéricas pueden resumirse en menos componentes.
+
+9. **Clusterización:** se aplicará k-means y se evaluarán diferentes cantidades de clusters mediante los métodos del codo y la silueta.
+
+10. **Interpretación de resultados:** se describirán los grupos obtenidos, se compararán contra la severidad diagnosticada y contra el centro de procedencia.
