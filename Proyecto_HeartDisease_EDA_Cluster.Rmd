@@ -827,7 +827,7 @@ datos_pca <- datos_pca %>%
 ```
 
 **Explicación del código:** 
-- Primero se calcula la mediana global de chol, excluyendo los valores nulos del cálculo (na.rm = TRUE), la cual se utiliza para imputar el dataset Switzerland, donde falta el 100% de los datos. Luego, mediante case_when() dentro de un group_by(dataset), se calcula una mediana propia para cada uno de los demás grupos (como Long Beach y Hungary), y se utiliza esa mediana específica para imputar sus valores faltantes según corresponda.
+Primero se calcula la mediana global de chol, excluyendo los valores nulos del cálculo (na.rm = TRUE), la cual se utiliza para imputar el dataset Switzerland, donde falta el 100% de los datos. Luego, mediante case_when() dentro de un group_by(dataset), se calcula una mediana propia para cada uno de los demás grupos (como Long Beach y Hungary), y se utiliza esa mediana específica para imputar sus valores faltantes según corresponda.
 
 -Verificamos que el procedimiento haya sido correcto sin presencia de nulos
 
@@ -837,7 +837,7 @@ colSums(is.na(datos_pca))
 
 ## Aplicación del PCA y escalamiento
 
-- Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial. Todo esto sin indicarle mediante codigo la cantidad de componentes de salida para que automaticamente genere los que cree necesarios.
+- Procedemos a la aplicación del análisis de componentes principales al conjunto de datos previamente preparado. Es importante escalar o estandarizar los valores, ya que, de lo contrario, las variables con magnitudes más grandes dominarían el análisis de forma artificial.
 
 ```{r aplicacion-pca}
 resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 3)
@@ -849,7 +849,7 @@ summary(resultado_pca)
 
 
 **Explicación del código:** 
--Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
+Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
 
 ## Varianza explicada
 
@@ -911,7 +911,7 @@ severidad <- as.factor(data$num)
 
 fviz_pca_ind(resultado_pca,
              geom = "point",
-             habillage = severidad,   # vector con la categoría de cada individuo
+             habillage = severidad,   
              addEllipses = TRUE,
              repel = TRUE)
 ```
