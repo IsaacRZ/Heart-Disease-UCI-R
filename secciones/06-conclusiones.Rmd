@@ -1,0 +1,42 @@
+# Conclusiones y cierre {.tabset .tabset-pills}
+
+## Conclusiones generales
+
+<!-- PENDIENTE: recorrer los diez objetivos y responder cada uno con los
+     resultados obtenidos. -->
+
+## Limitaciones del análisis
+
+<!-- PENDIENTE: mencionar la alta proporción de faltantes en algunas variables, la
+     exclusión de las variables categóricas del agrupamiento, las limitaciones de
+     k-means frente a grupos de forma irregular y el alcance restringido a los
+     cuatro centros incluidos en el dataset. -->
+
+## Referencias
+
+<div class="card-heart">
+Las siguientes fuentes respaldan el origen del dataset, las herramientas de R y las técnicas estadísticas utilizadas en el proyecto.
+</div>
+
+Janosi, A., Steinbrunn, W., Pfisterer, M., & Detrano, R. (1989). *Heart Disease* [Conjunto de datos]. UCI Machine Learning Repository. https://archive.ics.uci.edu/dataset/45/heart+disease
+
+Kassambara, A., & Mundt, F. (2020). *factoextra: Extract and visualize the results of multivariate data analyses* [Paquete de R]. CRAN. https://CRAN.R-project.org/package=factoextra
+
+R Core Team. (2026). *R: A language and environment for statistical computing*. R Foundation for Statistical Computing. https://www.R-project.org/
+
+R Core Team. (s. f.). *K-means clustering*. R Documentation. https://search.r-project.org/R/refmans/stats/html/kmeans.html
+
+R Core Team. (s. f.). *Principal components analysis*. R Documentation. https://search.r-project.org/R/refmans/stats/html/prcomp.html
+
+Wickham, H., François, R., Henry, L., Müller, K., & Vaughan, D. (2023). *dplyr: A grammar of data manipulation* [Paquete de R]. CRAN. https://CRAN.R-project.org/package=dplyr
+
+Wickham, H., Navarro, D., & Pedersen, T. L. (2025). *ggplot2: Elegant graphics for data analysis* (3.ª ed.). Springer. https://ggplot2-book.org/
+
+## Información de la sesión
+
+```{r session-info}
+sessionInfo()
+```
+
+**Explicación del código:**  
+La función `sessionInfo()` documenta la versión de R y de cada paquete utilizado. Esta información permite que otra persona reproduzca el análisis en las mismas condiciones.

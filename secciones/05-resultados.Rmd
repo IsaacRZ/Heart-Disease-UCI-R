@@ -1,0 +1,31 @@
+# Interpretación de resultados {.tabset .tabset-pills}
+
+## Perfil de cada cluster
+
+<!-- PENDIENTE: tabla con los promedios de cada variable original por cluster y
+     descripción de cada perfil en términos clínicos. -->
+
+```{r perfil-clusters}
+
+```
+
+## Comparación contra la severidad
+
+<!-- PENDIENTE: tabla cruzada entre cluster y num (o enfermedad) para evaluar si
+     los grupos obtenidos coinciden con la severidad diagnosticada. Responde
+     directamente al objetivo 10. -->
+
+```{r clusters-vs-severidad}
+
+```
+
+## Comprobación contra el centro médico
+
+<!-- PENDIENTE: tabla cruzada entre cluster y dataset. Si un cluster corresponde
+     casi por completo a un solo hospital, el agrupamiento estaría reflejando
+     diferencias de registro y no perfiles clínicos. Responde al objetivo 11. -->
+
+```{r clusters-vs-centro}
+
+```
+

@@ -1,0 +1,277 @@
+# Lectura y limpieza de datos {.tabset .tabset-pills}
+
+## Carga de librerías
+
+En esta sección se cargan las librerías necesarias para trabajar con el dataset. Estas librerías permitirán leer los datos, manipular variables, crear gráficos, analizar correlaciones, aplicar PCA y realizar clusterización.
+
+```{r carga-librerias, message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(FactoMineR)
+library(factoextra)
+library(cluster)
+library(knitr)
+```
+
+**Explicación:**  
+Este chunk carga las librerías principales del proyecto.  
+La librería `readr` se utilizará para leer archivos CSV.  
+La librería `dplyr` permitirá manipular y resumir los datos.  
+La librería `ggplot2` será utilizada para crear gráficos.  
+La librería `corrplot` servirá para visualizar matrices de correlación.  
+Las librerías `FactoMineR` y `factoextra` serán utilizadas para el PCA y su visualización.
+La librería `knitr` sera utilizada para visualizar tablas.
+Finalmente, la librería `cluster` apoyará el análisis de clusterización.
+
+## Lectura del dataset
+
+En esta sección se importa el archivo `heart_disease_uci.csv`. La lectura declara explícitamente qué cadenas deben interpretarse como valores faltantes, ya que este dataset contiene celdas vacías en varias variables categóricas.
+
+```{r lectura-dataset, message=FALSE}
+data <- read.csv("../data/raw/heart_disease_uci.csv",
+  na.strings = c("", " ", "NA"),
+  sep = ",", dec = ".")
+```
+
+**Explicación:**  
+- La función `read.csv()` carga el archivo en un objeto llamado `data`.  
+
+- El argumento `na.strings` indica que las celdas vacías y los espacios en blanco deben registrarse como `NA`. Sin este argumento, esas celdas se leerían como texto vacío y el conteo de valores faltantes no reflejaría la realidad del dataset.
+
+- Como separador se utiliza "," para delimitar las columnas mientras que para los datos números tipo double se usa el "."
+
+## Exploración inicial
+
+En esta sección se realiza una primera revisión del dataset para conocer su tamaño, estructura, nombres de columnas y primeros registros.Se explora las dimensiones que consisten de 920 fila y 16 columnas, además de un vista a las primeras cinco filas del data así como la estructura del dataset original que combina variables númericas, de tipo texto y logicas.
+
+```{r exploracion-inicial}
+dim(data)
+names(data)
+head(data, 5)
+glimpse(data)
+```
+
+## Conversión de variables
+
+En esta sección se convierten a factor todas las variables categóricas del dataset, incluyendo las binarias, para que R las trate correctamente en tablas y gráficos.
+
+```{r conversion-variables}
+# Variables categóricas nominales
+data$sex     <- as.factor(data$sex)
+data$dataset <- as.factor(data$dataset)
+data$cp      <- as.factor(data$cp)
+data$restecg <- as.factor(data$restecg)
+data$slope   <- as.factor(data$slope)
+data$thal    <- as.factor(data$thal)
+
+# Variables categóricas binarias
+data$fbs   <- as.factor(data$fbs)
+data$exang <- as.factor(data$exang)
+
+# Comprobar el resultado de la conversión
+str(data)
+sapply(data, class)
+```
+
+
+Se incluyen `fbs` y `exang` porque, aunque se leen como texto o valor lógico, la tabla descriptiva las define como variables categóricas binarias.  
+Las funciones `str()` y `sapply(data, class)` permiten verificar que la conversión se aplicó correctamente.
+
+## Valores imposibles y duplicados
+
+Algunas variables clínicas registran ceros que no son biológicamente posibles y que en realidad representan mediciones ausentes. En esta sección se identifican esos casos y se revisan los registros duplicados.
+
+```{r valores-imposibles}
+# Registros duplicados
+sum(duplicated(data))
+
+# Conteo de ceros en variables donde el valor cero no es posible
+sum(data$chol == 0, na.rm = TRUE)
+sum(data$trestbps == 0, na.rm = TRUE)
+
+# Valores negativos en oldpeak
+sum(data$oldpeak < 0, na.rm = TRUE)
+
+# Rangos de las variables numéricas
+summary(data[, c("age", "trestbps", "chol", "thalch", "oldpeak", "ca")])
+summary(data[(sapply(data, is.numeric))])
+```
+
+**Explicación:**  
+`sum(duplicated(data))` cuenta las filas repetidas.  
+Las instrucciones siguientes cuentan cuántos registros presentan colesterol o presión arterial iguales a cero. Un colesterol de 0 mg/dl o una presión arterial de 0 mm Hg no son valores clínicamente posibles, por lo que corresponden a mediciones no realizadas.  
+También se cuentan los valores negativos de `oldpeak`, que sí son posibles en este examen y no deben tratarse como errores.  
+Finalmente, `summary()` muestra mínimos, máximos y cuartiles para confirmar los rangos de cada variable númerica.
+
+```{r conversion-ceros}
+# Convertir los ceros imposibles en valores faltantes explícitos
+data <- data %>%
+  mutate(
+    chol     = ifelse(chol == 0, NA, chol),
+    trestbps = ifelse(trestbps == 0, NA, trestbps)
+  )
+
+# Recuento de faltantes después de la corrección
+colSums(is.na(data[, c("chol", "trestbps")]))
+```
+**Explicación:**  
+La función `ifelse()` reemplaza por `NA` los ceros de `chol` y `trestbps`. De esta forma esos valores se tratan como faltantes durante el análisis y no distorsionan promedios, histogramas ni distancias en la clusterización.
+
+## Variable objetivo
+
+La variable `num` registra la severidad de la enfermedad en una escala de 0 a 4. En esta sección se decide cómo se utilizará durante el análisis.
+
+```{r variable-objetivo}
+# Distribución original de la severidad
+table(data$num)
+
+# Versión binaria: ausencia frente a presencia de enfermedad
+data$enfermedad <- factor(
+  ifelse(data$num == 0, "Ausencia", "Presencia"),
+  levels = c("Ausencia", "Presencia")
+)
+
+table(data$enfermedad)
+```
+
+**Explicación del código:**  
+`table(data$num)` muestra cuántos pacientes hay en cada nivel de severidad.  
+Después se crea la variable `enfermedad`, que agrupa los niveles 1 a 4 en una sola categoría de presencia. Esta versión binaria facilita las comparaciones cuando algunos niveles de severidad tienen muy pocos pacientes.  
+Ambas versiones se conservan: `num` para analizar el grado y `enfermedad` para comparaciones generales.
+
+
+## Instanciación de variables
+
+Apartado dedicado a la instaciación de variables requeridas durante el proyecto.
+
+```{r Instanciacion}
+# dataset: Cleveland
+data_CLE <- data %>% filter(dataset == "Cleveland")
+# dataset: Hungary
+data_HUN <- data %>% filter(dataset == "Hungary")
+# dataset: Switzerland
+data_CHE <- data %>% filter(dataset == "Switzerland")
+# dataset: VA Long Beach
+data_VAL <- data %>% filter(dataset == "VA Long Beach")
+```
+
+## Valores faltantes
+
+En esta sección se cuantifican los valores faltantes de cada variable, tanto en cantidad absoluta como en porcentaje.
+Las variables `ca` y `thal` tienen un porcentaje de 66.41 y 52.83, respectivamente.Por lo cual son variables candidatas a ser eliminadas debido a su alto porcentaje de valores faltantes, en la siguiente sección se analiza los valores faltantes por cada centro médico.  
+
+
+```{r valores-faltantes}
+# Cantidad de NAs
+colSums(is.na(data))
+# Porcentaje de NAs
+round(colSums(is.na(data)) / nrow(data) * 100, 2)
+```
+
+**Explicación: **  
+La función `is.na()` genera una matriz lógica que indica qué celdas están vacías.  
+`colSums()` suma esos valores por columna para obtener la cantidad de faltantes de cada variable.  
+La segunda instrucción divide ese conteo entre el total de filas para expresar el resultado como porcentaje.
+
+## Faltantes por centro médico
+
+El dataset reúne registros de cuatro centros distintos. Esta sección revisa si los valores faltantes se distribuyen de manera uniforme entre ellos, ya que un patrón concentrado en un centro puede afectar los análisis posteriores.
+
+```{r faltantes-por-centro}
+# Cantidad de registros por centro
+table(data$dataset)
+
+# Porcentaje de valores faltantes por variable dentro de cada centro
+na_CLE <- round(colSums(is.na(data_CLE))/ nrow(data_CLE) * 100, 2)
+na_HUN <- round(colSums(is.na(data_HUN))/ nrow(data_HUN) * 100, 2)
+na_CHE <- round(colSums(is.na(data_CHE))/ nrow(data_CHE) * 100, 2)
+na_VAL <- round(colSums(is.na(data_VAL))/ nrow(data_VAL) * 100, 2)
+
+# Unir valores en una tabla
+table_na <- rbind(na_CLE, na_HUN, na_CHE, na_VAL)
+rownames(table_na) <- c("Cleveland",       "Hungary",   "Switzerland", "VA Long Beach")
+t(table_na)
+
+# Prevalencia de enfermedad por centro
+round(prop.table(table(data$dataset, data$enfermedad), margin = 1) * 100, 1)
+
+# Perfil demográfico y clínico de cada centro
+data %>%
+  group_by(dataset) %>%
+  summarise(
+    n            = n(),
+    edad_media   = round(mean(age, na.rm = TRUE), 1),
+    presion      = round(mean(trestbps, na.rm = TRUE), 1),
+    frec_maxima  = round(mean(thalch, na.rm = TRUE), 1),
+    pct_hombres  = round(mean(sex == "Male") * 100, 1),
+    pct_enfermos = round(mean(enfermedad == "Presencia") * 100, 1)
+  )
+
+ggplot(data, aes(x = dataset, fill = enfermedad)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(
+    title = "Presencia de enfermedad cardíaca según el centro médico",
+    x     = "Centro médico",
+    y     = "Proporción de pacientes",
+    fill  = "Enfermedad"
+  ) +
+  theme_minimal()
+```
+
+**Explicación:**
+
+-  Se instancian los valores faltantes por cada centro medico: `Cleveland` `Hungary` `Switzerland` `VA Long Beach`.
+
+-  Luego se unen los resultados en una tabla que comprendan todos los valores faltantes. Se observa como los valores faltantes se distribuyen en su gran mayoría en los centros médicos de `Hungary` `Switzerland` `VA Long Beach`.
+
+-  Por ende el centro médico con la información más consistente es `Cleveland` donde el porcentaje más alto de valores NAs es de 1.64, esto debido a que en este centro médico realizó de manera consistente todos los examenes y pruebas. 
+
+## Estrategia de tratamiento de valores faltantes
+
+A partir del patrón identificado en la sección anterior, los valores faltantes del dataset se clasifican en dos tipos y reciben un tratamiento distinto.
+
+**Primer tipo: faltantes dependientes del paciente.**  
+Corresponden a variables donde el porcentaje de faltantes es bajo y se distribuye de manera similar entre los cuatro centros, como `trestbps`, `thalch` y `oldpeak`. En estos casos el examen sí formaba parte del protocolo y el dato se perdió de forma puntual, por lo que la imputación es defendible.
+
+**Segundo tipo: faltantes dependientes del centro.**  
+Corresponden a `ca`, `thal`, `slope` y al colesterol de Suiza. En estos casos el examen no se realizó de forma sistemática en determinados hospitales. Imputar aquí significaría generar resultados de pruebas médicas que nunca se practicaron, lo cual no constituye una recuperación de información sino una invención de datos. Por esta razón, estas variables no se imputan.
+
+En consecuencia, el proyecto adopta la siguiente estrategia:
+
+1. Las variables `trestbps`, `thalch` y `oldpeak` se imputan mediante la mediana calculada dentro de cada centro médico, no mediante la mediana global. Esto respeta las diferencias entre las poblaciones atendidas por cada hospital.
+2. Las variables `ca` y `thal` no se imputan ni se eliminan del proyecto. Se analizan de forma descriptiva sobre el subconjunto de Cleveland, único centro donde fueron registradas.
+3. La variable `slope` se conserva para el análisis descriptivo, pero queda fuera de las etapas de PCA y clusterización.
+4. El colesterol se conserva con sus faltantes reconocidos, y su análisis se acompaña siempre de la indicación de que Suiza no aporta información en esta variable.
+
+```{r imputacion-mediana}
+# Imputación por mediana dentro de cada centro médico
+data <- data %>%
+  group_by(dataset) %>%
+  mutate(across(
+    c(trestbps, thalch, oldpeak),
+    ~ ifelse(is.na(.x), median(.x, na.rm = TRUE), .x)
+  )) %>%
+  ungroup()
+
+# Comprobar que las tres variables quedaron completas
+colSums(is.na(data[, c("trestbps", "thalch", "oldpeak")]))
+```
+
+**Explicación:**  
+`group_by(dataset)` separa los pacientes según su centro de origen, de modo que la mediana se calcule dentro de cada hospital.  
+La combinación de `mutate()` y `across()` aplica la misma operación a las tres variables seleccionadas: cuando el valor es `NA`, se sustituye por la mediana del grupo, y en caso contrario se conserva el valor original.  
+Se utiliza la mediana en lugar de la media porque no se ve afectada por los valores atípicos presentes en estas variables.  
+La función `ungroup()` elimina la agrupación para que las operaciones posteriores trabajen sobre el dataset completo.  
+La última instrucción confirma que ya no quedan faltantes en esas tres variables.
+
+
+## Resumen de calidad de datos
+
+- Posteriormente de la exploración inicial se concluye que las variables categóricas nominales y binarias se deben transformar a tipo factor para realizar una exploración de datos efectiva y que R pueda tratarlas en tablas y gráficos, se instancia sobre el mismo nombre de cada variable usando la función `as.factor(data$variable)`, posteriormente se verifica que el cambio de tipo de variable se haya efectuado correctamente con `str(data)`  
+
+- Existen mediciones que no son medicamente posibles por ejemplo las variables `chol` y `trestbps` no pueden tener un valor en cero porque no es clínicamente posible obtener estas mediciones, se tratan como mediciones no realizadas, por lo cual se convierten a valores faltantes explícitos, en síntesis se uso la función `ifelse` para tratar los ceros por `NA`, de esta manera no distorsionan promedios, histogramas ni distancias dentro del marco de datos. También se analizan los promedios de cada valor faltante por cada centro médico, en los que se observa que Suiza presenta los mayores porcentajes de valores faltantes seguido de Hungría y Long Beach; lo que representa que el centro médico de Cleveland presenta los datos más consistentes de todo del dataset.
+
+- La variable objetivo de este dataset es `num` la cual registra la severidad de la enfermedad cardíaca en un nivel de 0 donde representa ausencia y 1 a 4 para representar un rango en la severidad de la condición del corazón al realizar el análisis. Para tratar la ausencia o presencia de enfermedad se instancia un nuevo objeto llamado `data$enfermedad` la cual crea una variable de tipo factor que muestre una versión binaria de la ausencia frente a la presencia de enfermedad sobre cada registro. Esto con el objetivo de realizar comparaciones generales.
