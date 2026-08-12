@@ -12,7 +12,7 @@ datos_pca <- data %>%
 
 Se toman las columnas seleccionadas para el pca del set de datos original y se guardan en una nueva variable
 
-Posteriormente se realiza una matriz de correlacion entre las variables seleccionadas y se observa una relación débil entre la mayoría de las variables seleccionadas, con excepción de age y thalch, que presentan una correlación moderadamente negativa. No obstante, se decide continuar con la aplicación del PCA, considerando que aun una correlación débil entre algunas variables puede aportar cierta reducción de dimensionalidad. Este hallazgo es consistente con los resultados obtenidos en la sección de varianza explicada, donde se requirió un mayor número de componentes de lo esperado para alcanzar un porcentaje aceptable de varianza acumulada.
+Posteriormente se realiza una matriz de correlacion entre las variables seleccionadas y se observa una relación débil entre la mayoría de las variables, con excepción de age y thalch, que presentan una correlación moderadamente negativa. No obstante, se decide continuar con la aplicación del PCA, considerando que aun una correlación débil entre algunas variables puede aportar cierta reducción de dimensionalidad. Este hallazgo es consistente con los resultados obtenidos en la sección de varianza explicada, donde se requirió un mayor número de componentes de lo esperado para alcanzar un porcentaje aceptable de varianza acumulada.
 
 ```{r}
 matriz_cor <- cor(datos_pca, use = "complete.obs")
@@ -63,15 +63,13 @@ resultado_pca <- PCA(datos_pca, scale.unit = TRUE, graph = FALSE, ncp = 4)
 ```
 
 **Explicación del código:** 
-Creamos una nueva variable resultado_pca que contendra el resultado de aplicar la funcion PCA al conjunto de datos, que centra y estadariza los resultados y encuentra los componentes principales, sin graficos ya que estos se crearan de forma manual posteriormente.
-
+Creamos una nueva variable, resultado_pca, que contendrá el resultado de aplicar la función PCA al conjunto de datos. Esta función centra y estandariza los datos, y encuentra los componentes principales, sin generar gráficos, ya que estos se crearán de forma manual posteriormente.
 
 ```{r}
 summary(resultado_pca)
 ```
 
-Podemos ver de forma numerica los pesos otorgados individualmente por cada dimension y su peso o varianza acumulada donde ya podemos darnos una idea de con cuantos componentes nos podemos manejar y que con cuatro se llega a un 88% de varianza explicada pero tomando en cuenta que la reduccion de dimensionalidad no seria tan grande como se esperaba.
-
+Podemos ver de forma numérica los pesos otorgados individualmente por cada dimensión y su peso o varianza acumulada, donde ya podemos darnos una idea de con cuántos componentes nos podemos manejar. Con cuatro componentes se llega a un 88 % de varianza explicada; sin embargo, tomando en cuenta que la reducción de dimensionalidad no sería tan grande como se esperaba.
 ## Varianza explicada
 
 En este apartado, se analizará mediante una tabla y una representación gráfica la varianza de los componentes, lo que permitirá obtener una mejor interpretación de los resultados obtenidos tras la aplicación del PCA al conjunto de variables seleccionadas.
@@ -120,14 +118,10 @@ Se analizará, mediante tablas y gráficos, la contribución de cada variable a 
 kable(resultado_pca$var$contrib, digits = 2)
 ```
 
-```{r}
-library(factoextra)
-fviz_pca_var(resultado_pca, col.var = "contrib", 
-             gradient.cols = c("blue", "yellow", "red"),
-             repel = TRUE)
-```
+**Explicación del código:** 
+Nuevamente mediante la funcion kable ya mencionada invocamos la variable resultado_pca y especificamente la contribucion de cada variable a cada componente.
 
-
+**Gráficos de barras**
 
 ```{r}
 fviz_contrib(resultado_pca, choice = "var", axes = 1)   
@@ -136,12 +130,33 @@ fviz_contrib(resultado_pca, choice = "var", axes = 3)
 fviz_contrib(resultado_pca, choice = "var", axes = 4)  
 ```
 
+**Analisis:**
+Mediante la tabla y los gráficos de barras, se observa que en el componente 1 la variable age presenta el mayor peso (aproximadamente 37%), seguida de thalch y oldpeak. En el componente 2, el peso es dominado casi en su totalidad por la variable chol, con cerca de un 80% de contribución, lo que sugiere que este componente representa principalmente la variabilidad asociada al colesterol. Para el componente 3, destacan trestbps y thalch como las contribuciones más relevantes, mientras que en el componente 4 predominan oldpeak y trestbps. Las variables no mencionadas presentan un aporte poco significativo en su respectivo componente. En conjunto, estos resultados indican que cada componente está dominado por una o dos variables específicas, más que por una combinación equilibrada entre todas ellas — lo cual es consistente con la baja correlación general observada previamente entre las variables del análisis.
 
+**Circulos de correlacion cos2**
+
+```{r}
+library(factoextra)
+fviz_pca_var(resultado_pca, col.var = "cos2", 
+             gradient.cols = c("blue", "yellow", "red"),
+             repel = TRUE)
+```
+
+**Analisis**
+Se observa que chol es la variable mejor representada en el plano, seguida de age y thalch, que también presentan una representación adecuada. Oldpeak tiene la representacion mas baja del plano, mientras que trestbps se ubica en un rango moderadamente bueno. Resulta interesante notar una correlación positiva casi nula entre las variables mejor representadas, mientras que las variables con menor representación muestran una correlación positiva más marcada entre sí. Por último, destaca la correlación altamente negativa entre thalch y age. todo en una variabilidad total del 57% formado por los dos primeros componentes principales.
+
+```{r}
+library(factoextra)
+fviz_pca_var(resultado_pca, col.var = "cos2", 
+             gradient.cols = c("blue", "yellow", "red"),
+             repel = TRUE, axes = c(3,4))
+```
+
+**Analisis:**
+El presente plano cuenta con una variabilidad del 34.3 % de los datos y está formado por los dos últimos componentes principales (3 y 4). Se observa que oldpeak es la variable mejor representada, junto con trestbps, mientras que age, al contrario del gráfico anterior, presenta la representación más baja, al igual que chol, que destacaba en el plano anterior. Por su parte, thalch mantiene una representación moderada en este caso.
+En cuanto a la correlación, nuevamente vemos el patrón de una correlación casi nula entre las variables con mejor representación y una correlación más marcada entre las variables con menor representación. Destaca especialmente la correlación altamente negativa entre age y thalch, así como entre thalch y chol.
 
 ## Visualización del PCA
-
-<!-- PENDIENTE: círculo de correlación y mapa de individuos, coloreando los puntos
-     según la severidad para observar si los grupos se distinguen visualmente. -->
 
 ```{r visualizacion-pca}
 severidad <- as.factor(data$num)
@@ -152,6 +167,9 @@ fviz_pca_ind(resultado_pca,
              addEllipses = TRUE,
              repel = TRUE)
 ```
+
+**Analisis:**
+Se observa que los grupos definidos por la variable de severidad (num) presentan un solapamiento considerable en el plano conformado por los dos primeros componentes principales, sin una separación visual clara entre categorías. Esto sugiere que la varianza capturada por PC1 y PC2 no es suficiente para diferenciar completamente los niveles de severidad, lo cual es consistente con el bajo porcentaje de varianza acumulada en estos dos primeros componentes. La distinción entre grupos podría depender de combinaciones más complejas de variables, incluyendo el tercer y cuarto componente retenidos, o de variables excluidas del PCA (como ca, thal y slope), las cuales se retomarán más adelante para la interpretación de los clústeres resultantes.
 
 **Justificacion de uso de PCA:**
 Si bien la reducción de dimensionalidad lograda mediante PCA fue moderada (de 5 variables a 4 componentes), dado el bajo nivel de correlación entre la mayoría de las variables originales, la aplicación de esta técnica continúa siendo pertinente antes de la clusterización. Esto se debe a que PCA transforma las variables en componentes ortogonales (no correlacionados entre sí), lo cual evita que la correlación moderada existente entre variables como age y thalch distorsione el cálculo de distancias en el algoritmo de clustering. Adicionalmente, permite descartar el componente de menor varianza (PC5), reduciendo parcialmente el ruido presente en los datos originales.
