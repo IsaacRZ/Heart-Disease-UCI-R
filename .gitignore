@@ -12,3 +12,32 @@
 data/processed/
 *.csv
 *.xlsx
+
+# === Archivos generados por R Markdown / knitr ===
+*_files/
+*_cache/
+figure-html/
+ 
+# === Archivos de salida renderizados (opcional: descomenta si no quieres subirlos) ===
+# *.html
+# *.pdf
+ 
+# === RStudio ===
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+ 
+# === Archivos temporales del sistema ===
+.DS_Store
+Thumbs.db
+ 
+# === Entornos / paquetes ===
+renv/library/
+renv/local/
+renv/staging/
+packrat/lib*/
+packrat/src/
+ 
+# === Logs ===
+*.log
