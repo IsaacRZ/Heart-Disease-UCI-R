@@ -53,63 +53,23 @@ La función `pivot_longer()` reorganiza las cinco variables en dos columnas, una
 
 ```{r}
 variables_numericas <- data %>%
-  select(age, trestbps, chol, thalch, oldpeak, ca)
+  select(age, trestbps, chol, thalch, oldpeak)
 
 head(variables_numericas)
 ```
 
 ```{r}
+contar_outliers <- function(x) {
+  q1  <- quantile(x, 0.25, na.rm = TRUE)
+  q3  <- quantile(x, 0.75, na.rm = TRUE)
+  ric <- IQR(x, na.rm = TRUE)
+  sum(x < (q1 - 1.5 * ric) | x > (q3 + 1.5 * ric), na.rm = TRUE)
+}
+
+# Aplicar la función a cada variable
 outliers_tabla <- data.frame(
-  Variable = c("age", "trestbps", "chol", "thalch", "oldpeak", "ca"),
-  Cantidad_Outliers = c(
-    sum(
-      data$age < quantile(data$age, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$age, na.rm = TRUE) |
-      data$age > quantile(data$age, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$age, na.rm = TRUE),
-      na.rm = TRUE
-    ),
-    
-    sum(
-      data$trestbps < quantile(data$trestbps, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$trestbps, na.rm = TRUE) |
-      data$trestbps > quantile(data$trestbps, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$trestbps, na.rm = TRUE),
-      na.rm = TRUE
-    ),
-    
-    sum(
-      data$chol < quantile(data$chol, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$chol, na.rm = TRUE) |
-      data$chol > quantile(data$chol, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$chol, na.rm = TRUE),
-      na.rm = TRUE
-    ),
-    
-    sum(
-      data$thalch < quantile(data$thalch, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$thalch, na.rm = TRUE) |
-      data$thalch > quantile(data$thalch, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$thalch, na.rm = TRUE),
-      na.rm = TRUE
-    ),
-    
-    sum(
-      data$oldpeak < quantile(data$oldpeak, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$oldpeak, na.rm = TRUE) |
-      data$oldpeak > quantile(data$oldpeak, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$oldpeak, na.rm = TRUE),
-      na.rm = TRUE
-    ),
-    
-    sum(
-      data$ca < quantile(data$ca, 0.25, na.rm = TRUE) -
-        1.5 * IQR(data$ca, na.rm = TRUE) |
-      data$ca > quantile(data$ca, 0.75, na.rm = TRUE) +
-        1.5 * IQR(data$ca, na.rm = TRUE),
-      na.rm = TRUE
-    )
-  )
+  Variable          = names(variables_numericas),
+  Cantidad_Outliers = sapply(variables_numericas, contar_outliers)
 )
 
 outliers_tabla
@@ -131,11 +91,42 @@ boxplot(
 )
 ```
 
+**Explicación del código:**
+
+Se define una función llamada `contar_outliers()` que recibe una variable y devuelve la
+cantidad de valores que quedan fuera de los límites establecidos por el criterio del rango
+intercuartílico. Estos límites corresponden al primer cuartil menos 1.5 veces el rango
+intercuartílico y al tercer cuartil más esa misma cantidad.  
+La función `sapply()` aplica esa función a cada columna del conjunto seleccionado y
+devuelve un vector con los resultados, que se organiza en una tabla.  
+Este procedimiento produce el mismo resultado que el cálculo variable por variable, pero
+evita repetir el mismo bloque de instrucciones cinco veces.  
+Posteriormente, `scale()` estandariza las variables para que puedan compararse en un mismo
+diagrama de caja, ya que sin este paso el colesterol dominaría el gráfico por la magnitud
+de sus valores.
+
 **Interpretación:**
 
-La identificación de valores atípicos se realizó mediante el criterio del rango intercuartílico (IQR) y se complementó con diagramas de caja utilizando las variables numéricas estandarizadas.
+La variable `ca` se excluyó de este análisis por dos razones. En primer lugar, presenta
+valores registrados únicamente en el centro de Cleveland, por lo que su rango
+intercuartílico se calcularía sobre un tercio de los pacientes y no sería representativo
+del conjunto. En segundo lugar, corresponde a un conteo discreto de cero a tres vasos,
+donde el criterio del rango intercuartílico identifica como atípicos a todos los
+pacientes de la categoría superior sin que ello indique una anomalía en el registro.
 
-Los resultados muestran que la variable `age` no presenta valores atípicos según este criterio. En contraste, `chol` presenta la mayor cantidad de valores atípicos, con 183 observaciones identificadas, seguida por `trestbps` con 28, `ca` con 20 y `oldpeak` con 16. La variable `thalch` presenta únicamente 2 valores atípicos.
+Los resultados muestran que la variable `age` no presenta valores atípicos según este
+criterio. La mayor cantidad corresponde a `trestbps`, con 27 observaciones identificadas,
+seguida de `chol` con 23 y `oldpeak` con 16. La variable `thalch` presenta únicamente 2
+valores atípicos.
+
+Conviene señalar que estas cifras difieren de las que se obtendrían sobre los datos sin
+depurar. Antes de convertir en valores faltantes los ceros clínicamente imposibles, el
+colesterol registraba una cantidad de atípicos considerablemente mayor, ya que esos ceros
+quedaban por debajo del límite inferior del criterio. Una vez corregidos, el colesterol
+deja de ser la variable con más valores extremos y ese lugar pasa a ocuparlo la presión
+arterial en reposo. Este contraste muestra que buena parte de los valores extremos
+detectados inicialmente no correspondía a pacientes con mediciones inusuales, sino a
+mediciones que nunca se realizaron.
 
 La presencia de valores atípicos no implica necesariamente que correspondan a errores en los datos. Debido a que el conjunto de datos corresponde a información clínica, estos valores pueden representar pacientes con características reales y relevantes.
 
@@ -222,59 +213,36 @@ frecuencias_categoricas
 ```{r}
 par(mfrow = c(3, 3))
 
-barplot(
-  table(ifelse(is.na(data$sex), "Faltante", data$sex)),
-  main = "Sex",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$sex), "Faltante", as.character(data$sex))),
+        main = "Sex", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$cp), "Faltante", data$cp)),
-  main = "Chest Pain",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$cp), "Faltante", as.character(data$cp))),
+        main = "Chest Pain", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$restecg), "Faltante", data$restecg)),
-  main = "Rest ECG",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$restecg), "Faltante", as.character(data$restecg))),
+        main = "Rest ECG", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$slope), "Faltante", data$slope)),
-  main = "Slope",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$slope), "Faltante", as.character(data$slope))),
+        main = "Slope", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$thal), "Faltante", data$thal)),
-  main = "Thal",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$thal), "Faltante", as.character(data$thal))),
+        main = "Thal", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$fbs), "Faltante", data$fbs)),
-  main = "Fasting Blood Sugar",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$fbs), "Faltante", as.character(data$fbs))),
+        main = "Fasting Blood Sugar", col = "steelblue", las = 2)
 
-barplot(
-  table(ifelse(is.na(data$exang), "Faltante", data$exang)),
-  main = "Exercise Angina",
-  col = "steelblue",
-  las = 2
-)
+barplot(table(ifelse(is.na(data$exang), "Faltante", as.character(data$exang))),
+        main = "Exercise Angina", col = "steelblue", las = 2)
 
 par(mfrow = c(1, 1))
 ```
 
 **Interpretación:**
+
+La función `as.character()` convierte el factor en texto antes de aplicar `ifelse()`. Sin
+esta conversión, `ifelse()` opera sobre la codificación interna del factor y devuelve el
+número de orden de cada nivel en lugar de su etiqueta, lo que produce gráficos con
+categorías identificadas como números.
 
 Las variables categóricas muestran diferentes distribuciones dentro del conjunto de datos. En la variable `sex`, se observa un predominio de pacientes de sexo masculino, quienes representan el 78.91% de las observaciones, mientras que las pacientes de sexo femenino representan el 21.09%.
 
@@ -294,31 +262,416 @@ En general, las variables categóricas presentan distribuciones desiguales entre
 
 ## Relación con la severidad
 
-<!-- PENDIENTE: tablas cruzadas y gráficos de barras apiladas de cada variable
-     categórica contra num o enfermedad. Responde a los objetivos 4 y 10. -->
+En esta sección se examina la relación entre las variables categóricas y la presencia de
+enfermedad cardíaca, con el fin de identificar qué categorías se asocian con una mayor
+proporción de pacientes enfermos.
 
 ```{r categoricas-vs-severidad}
-
+# Proporción de enfermedad dentro de cada categoría
+round(prop.table(table(data$cp,    data$enfermedad), margin = 1) * 100, 1)
+round(prop.table(table(data$sex,   data$enfermedad), margin = 1) * 100, 1)
+round(prop.table(table(data$exang, data$enfermedad), margin = 1) * 100, 1)
+round(prop.table(table(data$slope, data$enfermedad), margin = 1) * 100, 1)
 ```
+
+**Explicación:**  
+La función `table()` cruza cada variable categórica con la presencia de enfermedad.  
+El argumento `margin = 1` de `prop.table()` calcula las proporciones por fila, de modo que
+cada porcentaje indica qué proporción de los pacientes de esa categoría presenta
+enfermedad. Si se omitiera este argumento, los porcentajes se calcularían sobre el total
+general y no permitirían comparar categorías con cantidades muy distintas de pacientes.
+
+```{r grafico-categoricas-severidad}
+ggplot(data, aes(x = cp, fill = enfermedad)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Presencia de enfermedad según el tipo de dolor de pecho",
+       x = "Tipo de dolor de pecho", y = "Proporción de pacientes",
+       fill = "Enfermedad") +
+  theme_minimal()
+
+ggplot(data, aes(x = exang, fill = enfermedad)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Presencia de enfermedad según la angina inducida por ejercicio",
+       x = "Angina inducida por ejercicio", y = "Proporción de pacientes",
+       fill = "Enfermedad") +
+  theme_minimal()
+```
+
+**Explicación del código:**  
+El argumento `position = "fill"` hace que todas las barras alcancen la misma altura y
+representen proporciones en lugar de conteos, lo que permite comparar categorías de
+distinto tamaño.
+
+**Interpretación:**  
+Las cuatro variables analizadas muestran diferencias marcadas en la proporción de pacientes
+con enfermedad cardíaca.
+
+En el tipo de dolor de pecho, la categoría `asymptomatic` concentra la mayor proporción de
+enfermedad, con un 79.0 %, mientras que `atypical angina` presenta la menor, con apenas un
+13.8 %. Entre ambas se ubican `typical angina` con 43.5 % y `non-anginal` con 35.8 %. Este
+resultado puede parecer contraintuitivo, ya que los pacientes sin dolor torácico presentan
+la proporción más alta de enfermedad. Una explicación posible es que la ausencia de dolor
+característico retrasa la consulta y la derivación, de modo que estos pacientes llegan a
+evaluación en una etapa más avanzada.
+
+En cuanto al sexo, los pacientes masculinos presentan enfermedad en un 63.2 % de los casos,
+frente a un 25.8 % en las pacientes femeninas. Esta diferencia debe interpretarse con
+cautela, ya que el conjunto está compuesto en un 78.9 % por hombres y la composición por
+sexo varía de forma considerable entre centros.
+
+La angina inducida por ejercicio muestra la asociación más clara: entre los pacientes que
+la presentan, un 83.7 % tiene enfermedad, frente a un 36.4 % entre quienes no la presentan.
+
+Finalmente, en la pendiente del segmento ST, las categorías `downsloping` y `flat` alcanzan
+proporciones de enfermedad de 77.8 % y 77.1 % respectivamente, mientras que `upsloping`
+desciende a 38.4 %. Debe recordarse que esta variable presenta un 33.6 % de valores
+faltantes concentrados en determinados centros, por lo que las proporciones anteriores se
+calculan sobre dos tercios de los pacientes y no necesariamente representan al conjunto.
+
+En términos generales, estas asociaciones no deben interpretarse como relaciones causales.
+Como se observó en el análisis de calidad de datos, la prevalencia de enfermedad difiere de
+forma sustancial entre los cuatro centros, por lo que parte de las diferencias observadas
+puede reflejar la composición por hospital y no únicamente el efecto de la variable
+analizada.
 
 ## Relaciones entre variables numéricas
 
-<!-- PENDIENTE: scatterplots entre pares relevantes (age vs thalch, oldpeak vs
-     thalch) y boxplots de variables numéricas agrupadas por categorías. -->
+En esta sección se examinan las relaciones entre pares de variables numéricas mediante
+gráficos de dispersión y diagramas de caja agrupados.
 
-```{r relaciones-numericas}
+```{r relaciones-numericas, warning=FALSE, message=FALSE}
+# Relación entre edad y frecuencia cardíaca máxima
+ggplot(data, aes(x = age, y = thalch, color = enfermedad)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_color_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Relación entre edad y frecuencia cardíaca máxima",
+       x = "Edad", y = "Frecuencia cardíaca máxima", color = "Enfermedad") +
+  theme_minimal()
 
+# Relación entre oldpeak y frecuencia cardíaca máxima
+ggplot(data, aes(x = oldpeak, y = thalch, color = enfermedad)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Relación entre la depresión del segmento ST y la frecuencia cardíaca máxima",
+       x = "Oldpeak", y = "Frecuencia cardíaca máxima", color = "Enfermedad") +
+  theme_minimal()
 ```
 
-## Correlaciones
+**Explicación:**  
+`geom_point()` representa cada paciente como un punto, y el argumento `alpha` aplica
+transparencia para que las zonas con muchos pacientes superpuestos resulten visibles.  
+`geom_smooth(method = "lm")` agrega una recta de tendencia por grupo, lo que permite
+comparar el comportamiento de los pacientes con y sin enfermedad. El argumento
+`se = FALSE` oculta la banda de confianza para mantener el gráfico legible.
 
-<!-- PENDIENTE: matriz de correlación con use = "pairwise.complete.obs" por la
-     presencia de faltantes, y visualización con corrplot. -->
-
-```{r correlaciones}
-
+```{r boxplots-por-grupo, warning=FALSE}
+# Frecuencia cardíaca máxima según el tipo de dolor de pecho
+ggplot(data, aes(x = cp, y = thalch, fill = enfermedad)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title = "Frecuencia cardíaca máxima según el tipo de dolor de pecho",
+       x = "Tipo de dolor de pecho", y = "Frecuencia cardíaca máxima",
+       fill = "Enfermedad") +
+  theme_minimal()
 ```
 
 **Interpretación:**  
-<!-- PENDIENTE: identificar las asociaciones más fuertes y señalar si alguna pareja
-     de variables aporta información redundante para el PCA. -->
+El gráfico de dispersión entre la edad y la frecuencia cardíaca máxima confirma la relación
+negativa detectada en la matriz de correlación: los pacientes de mayor edad alcanzan
+frecuencias máximas menores durante la prueba de esfuerzo. Las rectas de tendencia de ambos
+grupos mantienen una pendiente descendente, aunque la de los pacientes con enfermedad se
+ubica por debajo, lo que indica que para una misma edad estos pacientes alcanzan
+frecuencias máximas inferiores.
+
+En la relación entre la depresión del segmento ST y la frecuencia cardíaca máxima se
+observa que los pacientes con valores altos de `oldpeak` tienden a concentrarse en la zona
+de frecuencias más bajas y corresponden mayoritariamente al grupo con enfermedad. La
+dispersión es amplia y ninguna de las dos variables separa los grupos por sí sola.
+
+El diagrama de caja por tipo de dolor de pecho muestra que la categoría `asymptomatic`
+presenta la mediana de frecuencia cardíaca máxima más baja, consistente con la mayor
+proporción de enfermedad observada en esa categoría. Dentro de cada tipo de dolor, los
+pacientes con enfermedad mantienen medianas inferiores a las de los pacientes sin
+enfermedad, aunque las cajas se solapan de forma considerable.
+
+En conjunto, estas relaciones son coherentes entre sí y de intensidad moderada. Ninguna
+pareja de variables permite separar visualmente a los pacientes con y sin enfermedad, lo
+cual anticipa que la agrupación posterior no dependerá de una única variable sino de
+combinaciones de varias.
+
+## Correlaciones
+
+En esta sección se analizan las correlaciones lineales entre las variables numéricas del
+conjunto completo. Este resultado será retomado para justificar la aplicación del Análisis
+de Componentes Principales.
+
+```{r correlaciones}
+matriz_numerica <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak)
+
+# Correlación calculada con los pares de observaciones disponibles
+matriz_cor <- cor(matriz_numerica, use = "pairwise.complete.obs")
+
+round(matriz_cor, 2)
+
+corrplot(matriz_cor,
+         method      = "color",
+         type        = "upper",
+         addCoef.col = "black",
+         tl.col      = "#1A2B32",
+         number.cex  = 0.8,
+         col         = colorRampPalette(c("#4FC3F7", "white", "#D32F2F"))(200))
+```
+
+**Explicación del código:**  
+El argumento `use = "pairwise.complete.obs"` indica que cada correlación se calcule con los
+pacientes que disponen de datos en las dos variables involucradas. Este ajuste es necesario
+porque el colesterol conserva valores faltantes; con el comportamiento por defecto, la
+función devolvería `NA` en toda la matriz.  
+La función `corrplot()` representa la matriz mediante colores, donde el rojo indica
+correlación positiva y el celeste correlación negativa, y `addCoef.col` muestra además el
+valor numérico dentro de cada celda.
+
+**Interpretación:**  
+La asociación más marcada del conjunto es la correlación negativa entre `age` y `thalch`
+(−0.38), seguida por las correlaciones positivas de `age` con `oldpeak` (0.27) y con
+`trestbps` (0.24). Todas son de magnitud moderada y resultan clínicamente coherentes, ya
+que la frecuencia cardíaca máxima alcanzable disminuye con la edad, mientras que la presión
+arterial en reposo y la depresión del segmento ST tienden a aumentar con ella.
+
+El colesterol se comporta de manera prácticamente independiente del resto de las variables,
+con correlaciones que no superan 0.09 en valor absoluto frente a cualquiera de las otras
+cuatro.
+
+Ninguna pareja alcanza 0.40 en valor absoluto, por lo que no existe redundancia que
+justifique descartar variables y las cinco se conservan para el PCA. No obstante, esta baja
+correlación general anticipa que la reducción de dimensionalidad será limitada: el PCA
+aprovecha justamente la información compartida entre variables, y cuando esta es escasa,
+cada componente tiende a recoger la variabilidad de una sola variable en lugar de resumir
+varias a la vez.
+
+
+## Correlaciones por centro médico
+
+Las correlaciones calculadas sobre el conjunto completo pueden ocultar comportamientos
+distintos entre los centros. Esta sección las recalcula por separado para verificar si las
+asociaciones observadas se mantienen en cada hospital.
+
+Un aspecto condiciona este análisis: el centro de Suiza no registró colesterol en ningún
+paciente, por lo que su matriz de correlación no puede incluir esa variable. Cleveland es
+el único centro que permite calcular la matriz completa sobre datos originales, sin
+faltantes relevantes en ninguna de las cinco variables.
+
+```{r correlaciones-por-centro}
+# Matriz de correlación de Cleveland con las cinco variables
+cor_CLE <- cor(
+  data_CLE %>% select(age, trestbps, chol, thalch, oldpeak),
+  use = "pairwise.complete.obs"
+)
+round(cor_CLE, 2)
+
+# Matriz de correlación de Hungría
+cor_HUN <- cor(
+  data_HUN %>% select(age, trestbps, chol, thalch, oldpeak),
+  use = "pairwise.complete.obs"
+)
+round(cor_HUN, 2)
+
+# Matriz de correlación de Long Beach
+cor_VAL <- cor(
+  data_VAL %>% select(age, trestbps, chol, thalch, oldpeak),
+  use = "pairwise.complete.obs"
+)
+round(cor_VAL, 2)
+
+# Matriz de correlación de Suiza, sin colesterol por ausencia total de registros
+cor_CHE <- cor(
+  data_CHE %>% select(age, trestbps, thalch, oldpeak),
+  use = "pairwise.complete.obs"
+)
+round(cor_CHE, 2)
+```
+
+**Explicación del código:**  
+Se calcula una matriz de correlación independiente para cada centro, utilizando los
+subconjuntos creados anteriormente.  
+En el caso de Suiza se excluye `chol` porque no cuenta con ningún valor registrado. Si se
+incluyera, la función devolvería `NA` en toda la fila y columna correspondiente, y la
+representación gráfica no podría generarse.
+
+```{r grafico-correlaciones-centro}
+par(mfrow = c(2, 2))
+
+corrplot(cor_CLE, method = "number", type = "upper",
+         tl.col = "#1A2B32", mar = c(0, 0, 2, 0),
+         title = "Cleveland")
+
+corrplot(cor_HUN, method = "number", type = "upper",
+         tl.col = "#1A2B32", mar = c(0, 0, 2, 0),
+         title = "Hungary")
+
+corrplot(cor_VAL, method = "number", type = "upper",
+         tl.col = "#1A2B32", mar = c(0, 0, 2, 0),
+         title = "VA Long Beach")
+
+corrplot(cor_CHE, method = "number", type = "upper",
+         tl.col = "#1A2B32", mar = c(0, 0, 2, 0),
+         title = "Switzerland (sin chol)")
+
+par(mfrow = c(1, 1))
+```
+
+**Explicación del código:**  
+La instrucción `par(mfrow = c(2, 2))` divide la ventana gráfica en cuatro paneles, de modo
+que las matrices puedan compararse en una misma vista.  
+El argumento `mar` reserva espacio en el margen superior para que el título de cada panel
+resulte visible, y `title` identifica el centro correspondiente.  
+Al finalizar se restaura la configuración original con `par(mfrow = c(1, 1))` para que los
+gráficos posteriores no queden divididos.
+
+```{r comparacion-age-thalch}
+# Comparación directa de la correlación entre edad y frecuencia cardíaca máxima
+correlaciones_age_thalch <- c(
+  Cleveland     = cor_CLE["age", "thalch"],
+  Hungary       = cor_HUN["age", "thalch"],
+  Switzerland   = cor_CHE["age", "thalch"],
+  "VA Long Beach" = cor_VAL["age", "thalch"]
+)
+
+round(correlaciones_age_thalch, 2)
+```
+
+**Explicación del código:**  
+Se extrae de cada matriz la correlación entre la edad y la frecuencia cardíaca máxima, que
+es la asociación más marcada del conjunto completo, y se reúnen los cuatro valores en un
+mismo vector. Esto permite verificar si la relación se mantiene con intensidad similar en
+todos los centros o si el valor global está determinado por alguno de ellos en particular.
+
+**Interpretación:**  
+La correlación negativa entre la edad y la frecuencia cardíaca máxima se mantiene en los
+cuatro centros, pero con intensidades muy distintas: −0.45 en Hungría, −0.40 en Cleveland,
+−0.29 en Suiza y solamente −0.17 en Long Beach. La dirección de la asociación es por tanto
+estable y coherente con el comportamiento fisiológico esperado, mientras que su magnitud no
+lo es.
+
+Esta diferencia no debe atribuirse directamente a las poblaciones atendidas. Como se
+documentó en el análisis de calidad de datos, Long Beach presentaba un 26.5 % de valores
+faltantes en `thalch`, un 28.5 % en `trestbps` y un 28.0 % en `oldpeak`, los cuales fueron
+imputados mediante la mediana del centro. Sustituir aproximadamente una cuarta parte de una
+variable por un valor constante reduce su variabilidad y, en consecuencia, atenúa cualquier
+correlación en la que participe, acercándola artificialmente a cero. El valor de −0.17
+obtenido en ese centro refleja, al menos en parte, ese efecto del procedimiento de
+imputación y no únicamente una característica de sus pacientes.
+
+Un segundo resultado respalda esta lectura. La correlación entre `thalch` y `oldpeak` es
+negativa en Cleveland (−0.35) y en Hungría (−0.30), pero aparece positiva en Long Beach
+(+0.18) y en Suiza (+0.17), es decir, con el signo invertido. Un cambio de dirección de esta
+naturaleza difícilmente se explica por diferencias entre poblaciones clínicas, y resulta
+consistente con la presencia de una proporción elevada de valores imputados en ambas
+variables dentro de esos dos centros.
+
+Cleveland constituye la excepción relevante. Es el único centro que no requirió imputación
+en ninguna de las cinco variables, por lo que su matriz de correlación se calcula
+íntegramente sobre mediciones originales. Sus valores son, en consecuencia, los únicos que
+describen la estructura de asociación real de los datos sin verse afectados por decisiones
+de tratamiento de valores faltantes. Resulta significativo que sea también el centro donde
+las asociaciones presentan mayor coherencia interna: la relación entre `age` y `thalch`
+(−0.40), entre `thalch` y `oldpeak` (−0.35) y entre `age` y `trestbps` (0.28) apuntan todas
+en la dirección clínicamente esperada.
+
+Debe considerarse además el tamaño de cada subconjunto. Suiza aporta 123 pacientes y Long
+Beach 200, frente a los 304 de Cleveland y los 293 de Hungría, por lo que sus correlaciones
+son estimaciones menos estables y las diferencias moderadas entre centros deben
+interpretarse con la debida cautela.
+
+Estos hallazgos tienen una consecuencia directa sobre la etapa siguiente. El Análisis de
+Componentes Principales se construye a partir de la estructura de correlación entre
+variables; si esa estructura difiere entre centros, un PCA único aplicado a las 920
+observaciones representará un promedio de estructuras que no son equivalentes, y que además
+se encuentran parcialmente deformadas por la imputación en tres de los cuatro centros. Por
+esta razón, además del PCA general, se considera pertinente aplicar la técnica de forma
+independiente al subconjunto de Cleveland, donde la matriz de correlación proviene
+exclusivamente de mediciones registradas.
+
+## Análisis de ca y thal en Cleveland
+
+Las variables `ca` y `thal` corresponden a exámenes que no se aplicaron de manera
+sistemática en todos los centros. Como se documentó en el análisis de calidad de datos, sus
+porcentajes de valores faltantes superan el 90 % en Hungría y Long Beach, mientras que en
+Cleveland se ubican en 1.64 % y 0.99 % respectivamente. Por esta razón ambas variables se
+analizan sobre el subconjunto de Cleveland, único centro donde fueron registradas de forma
+consistente, reconociendo de manera explícita que las conclusiones de esta sección aplican
+únicamente a esa población.
+
+```{r subconjunto-cleveland}
+# Pacientes de Cleveland con ambas variables registradas
+cleveland_ct <- data_CLE %>%
+  filter(!is.na(ca), !is.na(thal))
+
+# Tamaño del subconjunto resultante
+nrow(cleveland_ct)
+
+# Distribución de ambas variables
+table(cleveland_ct$ca)
+table(cleveland_ct$thal)
+```
+
+**Explicación del código:**  
+La función `filter()` conserva únicamente los pacientes de Cleveland que disponen de
+registro en las dos variables. Este procedimiento se denomina eliminación por casos
+completos y resulta apropiado en este caso porque la cantidad de pacientes afectados dentro
+del centro es mínima, a diferencia de lo que ocurriría si se aplicara al conjunto completo.  
+Las funciones `table()` muestran cuántos pacientes corresponden a cada categoría.
+
+```{r cleveland-severidad}
+# Proporción de enfermedad según la cantidad de vasos coloreados
+round(prop.table(table(cleveland_ct$ca, cleveland_ct$enfermedad), margin = 1) * 100, 1)
+
+# Proporción de enfermedad según el resultado de la prueba de talio
+round(prop.table(table(cleveland_ct$thal, cleveland_ct$enfermedad), margin = 1) * 100, 1)
+```
+
+**Explicación del código:**  
+Ambas instrucciones calculan, dentro de cada categoría, el porcentaje de pacientes con
+enfermedad cardíaca. El argumento `margin = 1` asegura que la proporción se calcule por
+fila, es decir, dentro de cada valor de `ca` y de `thal`.
+
+```{r grafico-cleveland}
+ggplot(cleveland_ct, aes(x = factor(ca), fill = enfermedad)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title    = "Presencia de enfermedad según vasos coloreados por fluoroscopía",
+       subtitle = "Subconjunto de pacientes del centro de Cleveland",
+       x = "Cantidad de vasos principales coloreados",
+       y = "Proporción de pacientes", fill = "Enfermedad") +
+  theme_minimal()
+
+ggplot(cleveland_ct, aes(x = thal, fill = enfermedad)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("Ausencia" = "#4FC3F7", "Presencia" = "#D32F2F")) +
+  labs(title    = "Presencia de enfermedad según el resultado de la prueba de talio",
+       subtitle = "Subconjunto de pacientes del centro de Cleveland",
+       x = "Resultado de la prueba de talio",
+       y = "Proporción de pacientes", fill = "Enfermedad") +
+  theme_minimal()
+```
+
+**Explicación del código:**  
+La variable `ca` se convierte mediante `factor()` porque, aunque se almacena como número,
+representa un conteo discreto de vasos y debe representarse como categoría.  
+El subtítulo de ambos gráficos indica de forma explícita que corresponden únicamente a
+Cleveland, para evitar que se interpreten como resultados del conjunto completo.
+
+**Interpretación:**  
+El subconjunto de Cleveland con ambas variables registradas está compuesto por 297 pacientes, es decir, prácticamente la totalidad de los 304 que aporta el centro. Únicamente siete registros se pierden por casos incompletos, lo que confirma que la eliminación por casos completos resulta apropiada dentro de este centro.
+
+La cantidad de vasos principales coloreados por fluoroscopía muestra una asociación creciente y muy marcada con la presencia de enfermedad. Entre los pacientes sin vasos comprometidos, un 25.9 % presenta enfermedad, proporción que asciende a 67.7 % con un vaso, a 81.6 % con dos y a 85.0 % con tres. El incremento más pronunciado se produce entre las categorías 0 y 1, con una diferencia de más de cuarenta puntos porcentuales, mientras que a partir de dos vasos la proporción tiende a estabilizarse. La diferencia total entre los extremos de la escala supera los cincuenta y nueve puntos porcentuales.
+
+La prueba de talio presenta un comportamiento igualmente diferenciado. La categoría normal registra la menor proporción de enfermedad, con un 22.6 %, mientras que reversable defect alcanza un 76.5 % y fixed defect un 66.7 %. Esta última cifra debe interpretarse con reserva, ya que corresponde únicamente a 18 pacientes y constituye por tanto una estimación poco estable.
+
+Ambas variables presentan una capacidad de discriminación notablemente superior a la de cualquiera de las variables numéricas analizadas previamente. Mientras que la asociación más marcada entre variables numéricas alcanzaba un coeficiente de correlación de −0.38, aquí se observan diferencias de más de cincuenta puntos porcentuales en la proporción de enfermedad entre categorías. Este resultado es coherente con el hecho de que ambos exámenes evalúan directamente la irrigación y la anatomía coronaria, mientras que las variables numéricas recogen manifestaciones indirectas.
+
+Pese a su valor descriptivo, ninguna de las dos puede incorporarse al Análisis de Componentes Principales ni a la clusterización general, ya que sus registros existen únicamente en uno de los cuatro centros y su inclusión reduciría el análisis a un tercio de los pacientes. Ambas se retomarán en la etapa de interpretación de los clústeres, donde permitirán evaluar si los grupos obtenidos a partir de las variables numéricas guardan correspondencia con el compromiso coronario observado en este subconjunto.
