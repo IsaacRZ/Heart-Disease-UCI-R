@@ -32,7 +32,95 @@ Para la clusterización se utilizan las coordenadas de los individuos sobre los 
 
 ```{r metodo-silueta}
 
+# Definir los valores de k que se van a evaluar
+k_values <- 2:10
+
+# Crearemos un vector para guardar el promedio de silueta de cada k
+silhouette_promedio <- numeric(length(k_values))
+
+# Evaluaremos cada cantidad de clusters
+for (i in seq_along(k_values)) {
+  
+  k <- k_values[i]
+  
+  # Aplicar k-means para el valor de k actual
+  modelo <- kmeans(
+    datos_cluster,
+    centers = k,
+    nstart = 25
+  )
+  
+  # Calcular los valores de silueta
+  sil <- silhouette(
+    modelo$cluster,
+    dist(datos_cluster)
+  )
+  
+  # Guardar el promedio de silueta
+  silhouette_promedio[i] <- mean(sil[, 3])
+}
+
+# se crea una tabla con los resultados
+resultados_silueta <- data.frame(
+  clusters = k_values,
+  silueta_promedio = silhouette_promedio
+)
+
+# Mostrar los resultados
+resultados_silueta
+
 ```
+```{r}
+# Identificar el número de clusters con mayor promedio de silueta
+mejor_k <- resultados_silueta$clusters[
+  which.max(resultados_silueta$silueta_promedio)
+]
+
+# Obtener el valor máximo de silueta
+mejor_silueta <- max(
+  resultados_silueta$silueta_promedio
+)
+
+cat(
+  "Número óptimo de clusters según el método de silueta:",
+  mejor_k,
+  "\n"
+)
+
+cat(
+  "Promedio de silueta:",
+  round(mejor_silueta, 3),
+  "\n"
+)
+```
+```{r}
+ggplot(
+  resultados_silueta,
+  aes(
+    x = clusters,
+    y = silueta_promedio
+  )
+) +
+  geom_line() +
+  geom_point(size = 3) +
+  geom_vline(
+    xintercept = mejor_k,
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Método de la silueta",
+    x = "Número de clusters (k)",
+    y = "Silueta promedio"
+  ) +
+  theme_minimal()
+```
+### Interpretación
+
+El método de silueta evaluó diferentes cantidades de clusters, desde 2 hasta 10. El mayor valor promedio de silueta se obtuvo utilizando **3 clusters**, con un valor de aproximadamente **0.270**.
+
+Esto indica que, entre las soluciones evaluadas, la configuración de 3 clusters presenta la mejor separación relativa entre los grupos y una mejor cohesión interna. Sin embargo, el valor obtenido no es especialmente alto, por lo que la estructura de los grupos no puede considerarse completamente definida. Aun así, dentro de las alternativas analizadas, **3 clusters representa la mejor opción según este método**.
+
+Por lo tanto, el resultado del método de silueta se utilizará como referencia para seleccionar la cantidad de grupos en la aplicación posterior del algoritmo k-means.
 
 ## Aplicación de k-means
 
