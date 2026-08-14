@@ -193,13 +193,6 @@ resultado_pca_completos <- PCA(
 nrow(datos_pca_completos)
 nrow(data) - nrow(datos_pca_completos)
 
-resultado_pca_completos <- PCA(
-  datos_pca_completos,
-  scale.unit = TRUE,
-  graph = FALSE,
-  ncp = 4 
-)
-
 summary(resultado_pca_completos)
 kable(resultado_pca_completos$eig, digits = 2)
 kable(resultado_pca_completos$var$contrib, digits = 2)
