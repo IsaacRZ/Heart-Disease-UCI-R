@@ -2,15 +2,25 @@
 
 ## Preparación para clusterización
 
-<!-- PENDIENTE: construir el conjunto final de datos escalados, comprobar
-     dimensiones y ausencia de valores no finitos. -->
-
 ```{r preparacion-cluster}
 set.seed(123)
+
+datos_cluster <- as.data.frame(resultado_pca$ind$coord)
+
+dim(datos_cluster)
+anyNA(datos_cluster)
+all(sapply(datos_cluster, is.finite))
 ```
 
 **Explicación del código:**  
 La función `set.seed()` fija el generador de números aleatorios. Esto es necesario porque k-means inicia sus centroides de forma aleatoria y, sin una semilla fija, cada ejecución del documento produciría clusters distintos. Fijarla garantiza que los resultados descritos en la interpretación coincidan con los que genera el documento al ser compilado nuevamente.
+
+Para la clusterización se utilizan las coordenadas de los individuos sobre los componentes principales obtenidos en el PCA (`resultado_pca$ind$coord`), en lugar de las variables originales. Esto se debe a que el PCA ya generó variables numéricas, no correlacionadas entre sí y en una escala comparable, lo cual es precisamente lo que k-means necesita para funcionar correctamente.
+
+- `as.data.frame(resultado_pca$ind$coord)` extrae las coordenadas de cada paciente sobre los 4 componentes principales calculados y las guarda en `datos_cluster`, el conjunto de entrada para k-means.
+- `dim(datos_cluster)` verifica que el número de filas coincide con la cantidad de pacientes utilizados en el PCA, y que hay 4 columnas (una por componente).
+- `anyNA(datos_cluster)` comprueba que no queden valores faltantes, ya que `kmeans()` no admite `NA`.
+- `all(sapply(datos_cluster, is.finite))` verifica que todos los valores sean finitos (sin `Inf` o `-Inf`), evitando errores al calcular distancias entre observaciones.
 
 ## Método del codo
 
