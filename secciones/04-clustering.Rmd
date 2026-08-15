@@ -26,7 +26,51 @@ Para la clusterización se utilizan las coordenadas de los individuos sobre los 
 
 ```{r metodo-codo}
 
+k_values <- 2:10 # Valores de k a evaluar
+
+wss <- numeric(length(k_values))  # Vector para almacenar la suma de cuadrados dentro de los clusters de cada valor k
+
+# Evaluar cada cantidad de clusters
+for (i in seq_along(k_values)) {
+  k <- k_values[i]
+  
+  # Aplicar k-means para el valor central de k 
+  modelo <- kmeans(
+    datos_cluster,
+    centers = k,
+    nstart = 25
+  )
+  
+  wss[i] <- modelo$tot.withinss
+}
+
+resultados_codo <- data.frame(
+  clusters = k_values,
+  wss = wss
+)
+resultados_codo
 ```
+
+
+```{r}
+ggplot(
+  resultados_codo,
+  aes(
+    x = clusters,
+    y = wss
+  )
+) + 
+  geom_line() +
+  geom_point(size = 3) +
+  scale_x_continuous(breaks = k_values) +
+  labs(
+    title = "Metodo del codo",
+    x = "Numero de clusters (k)",
+    y = "Suma de cuadrados dentro de los clusters (WSS)"
+  ) +
+  theme_minimal()
+```
+
 
 ## Método de silueta
 
@@ -70,6 +114,8 @@ resultados_silueta <- data.frame(
 resultados_silueta
 
 ```
+
+
 ```{r}
 # Identificar el número de clusters con mayor promedio de silueta
 mejor_k <- resultados_silueta$clusters[
@@ -93,6 +139,8 @@ cat(
   "\n"
 )
 ```
+
+
 ```{r}
 ggplot(
   resultados_silueta,
