@@ -162,7 +162,8 @@ ggplot(
   ) +
   theme_minimal()
 ```
-### Interpretación
+
+**Interpretación:**
 
 El método de silueta evaluó diferentes cantidades de clusters, desde 2 hasta 10. El mayor valor promedio de silueta se obtuvo utilizando **3 clusters**, con un valor de aproximadamente **0.270**.
 
