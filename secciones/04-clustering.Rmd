@@ -172,12 +172,37 @@ Por lo tanto, el resultado del método de silueta se utilizará como referencia 
 
 ## Aplicación de k-means
 
-<!-- PENDIENTE: aplicar kmeans con la cantidad de clusters seleccionada, usando
-     nstart = 25 para reducir la dependencia de la inicialización aleatoria. -->
+Aplicación a partir los valores mas altos dados por el método de la silueta ya que el método del codo dio resultados ambiguos
+
+Primero k = 2 con un valor de 0.246 (el mas alto)
 
 ```{r aplicacion-kmeans}
+modelo_kmeans <- kmeans(
+  datos_cluster,
+  centers = 2,
+  nstart = 25
+)
 
+modelo_kmeans$size
+modelo_kmeans$centers
 ```
+
+Luego para verificar con el siguiente valor mas alto con k = 5 con un valor de 0.227
+
+```{r}
+modelo_kmeans <- kmeans(
+  datos_cluster,
+  centers = 5,
+  nstart = 25
+)
+
+modelo_kmeans$size
+modelo_kmeans$centers
+```
+
+
+**Explicación:**
+Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta (0.246), obteniendo dos grupos de tamaños 489 y 431 observaciones. Posteriormente, se verifica con el siguiente valor más alto, k=5 (0.226), obteniendo cinco grupos de tamaños más variables (233, 281, 90, 132 y 184).
 
 ## Visualización de clusters
 
