@@ -210,7 +210,18 @@ modelo_kmeans_k5$centers
 
 
 **Explicación:**
-Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta (0.246), obteniendo dos grupos de tamaños 489 y 431 observaciones. Posteriormente, se verifica con el siguiente valor más alto, k=5 (0.226), obteniendo cinco grupos de tamaños más variables (233, 281, 90, 132 y 184).
+Aunque en la sección de PCA se validó que la imputación de `chol` no distorsionaba 
+significativamente la varianza explicada, se optó por utilizar la versión de casos 
+completos (`resultado_pca_completos`, 718 pacientes) como base para la clusterización, 
+priorizando trabajar únicamente con datos observados directamente al momento de 
+perfilar clínicamente cada grupo.
+
+Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante 
+el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto 
+de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta 
+(0.246), obteniendo dos grupos de tamaños 347 y 371 observaciones. Posteriormente, se 
+verifica con el siguiente valor más alto, k=5 (0.227), obteniendo cinco grupos de 
+tamaños más variables (92, 81, 115, 223 y 207).
 
 ## Visualización de clusters
 
