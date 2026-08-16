@@ -5,7 +5,7 @@
 ```{r preparacion-cluster}
 set.seed(123)
 
-datos_cluster <- as.data.frame(resultado_pca$ind$coord)
+datos_cluster <- as.data.frame(resultado_pca_completos$ind$coord)
 
 dim(datos_cluster)
 anyNA(datos_cluster)
@@ -71,6 +71,12 @@ ggplot(
   theme_minimal()
 ```
 
+**Interpretación:**
+Mirando el gráfico, la línea baja bastante rápido al principio y después se va aplanando poco a poco, pero no hay un punto donde se note un quiebre fuerte tipo "codo" marcado. Es más una curva que se suaviza de a poco que un ángulo claro.
+
+De 2 a 5 clusters todavía baja harto (entre 12 % y 14 % cada vez que se agrega un cluster). Después de 5 clusters la bajada se hace más lenta, como menos del 8 % por cada cluster que se agrega, y de ahí en adelante casi no cambia mucho hasta llegar a 10.
+
+Si tuviera que marcar un punto donde la curva empieza a aplanarse más, sería entre 5 y 6 clusters, que es más o menos donde el ritmo de bajada cambia. Pero como no es un quiebre tan claro, este método por sí solo no ayuda mucho a decidir el número de clusters. Por eso se terminó usando el resultado del método de silueta como guía principal, y se probaron los dos valores que dieron mejor puntaje ahí (k = 2 y k = 5).
 
 ## Método de silueta
 
@@ -165,9 +171,11 @@ ggplot(
 
 **Interpretación:**
 
-El método de silueta evaluó diferentes cantidades de clusters, desde 2 hasta 10. El mayor valor promedio de silueta se obtuvo utilizando 2 clusters, con un valor de aproximadamente 0.246, seguido de cerca por la solución de 5 clusters, con 0.227.
+Al ver la tabla y el gráfico, el valor más alto de silueta se da con 2 clusters, con un promedio de 0.246. Después de ahí el valor baja un poco con 3 y 4 clusters, y vuelve a subir casi al mismo nivel con 5 clusters (0.227), que queda como el segundo mejor resultado.
 
-Esto indica que, entre las soluciones evaluadas, la configuración de 2 clusters presenta la mejor separación relativa y cohesión interna según este criterio. El valor obtenido es moderado — no cercano a 1 — por lo que la estructura de los grupos no puede considerarse completamente definida, y la cercanía entre las dos mejores soluciones (2 y 5 clusters) sugiere que no hay una única segmentación dominante. Por esta razón se probarán ambas alternativas en la aplicación de k-means.
+El hecho de que 2 y 5 clusters den valores parecidos y no haya un valor que se despegue claramente de los demás dice que la separación entre grupos no es súper marcada. Un valor de 0.246 no es malo, pero tampoco es alto (cerca de 1 sería una separación casi perfecta), así que los grupos existen pero se mezclan un poco entre sí.
+
+Por esta razón se decidió no quedarse con un solo número de clusters, sino probar tanto k = 2 como k = 5 en la aplicación de k-means, y comparar cuál de los dos da una interpretación más útil para describir a los pacientes.
 
 ## Aplicación de k-means
 
@@ -176,27 +184,28 @@ Aplicación a partir los valores mas altos dados por el método de la silueta ya
 Primero k = 2 con un valor de 0.246 (el mas alto)
 
 ```{r aplicacion-kmeans}
-modelo_kmeans <- kmeans(
+
+modelo_kmeans_k2 <- kmeans(
   datos_cluster,
   centers = 2,
   nstart = 25
 )
 
-modelo_kmeans$size
-modelo_kmeans$centers
+modelo_kmeans_k2$size
+modelo_kmeans_k2$centers
 ```
 
 Luego para verificar con el siguiente valor mas alto con k = 5 con un valor de 0.227
 
 ```{r}
-modelo_kmeans <- kmeans(
+modelo_kmeans_k5 <- kmeans(
   datos_cluster,
   centers = 5,
   nstart = 25
 )
 
-modelo_kmeans$size
-modelo_kmeans$centers
+modelo_kmeans_k5$size
+modelo_kmeans_k5$centers
 ```
 
 
