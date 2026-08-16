@@ -239,138 +239,98 @@ ggplot(datos_cluster_k5, aes(x = Dim.1, y = Dim.2, color = cluster)) +
 
 ## Clusterización con Cleveland
 
-Se utiliza como variable de entrada el analisis que entregó PCA en el centro médico de Cleveland, el cual incluye variables `ca` y `thalch` que no pudieron ser agregados en los otros dos analisis de PCA debido al numero de valores faltantes. 
+Se utiliza como variable de entrada el análisis que entregó PCA en el centro médico de Cleveland, el cual incluye las variables `ca` y `thalch` que no pudieron ser agregadas en los otros dos análisis de PCA debido al número de valores faltantes.
 
 ```{r preparacion-cluster-CLE}
 set.seed(123)
 
-datos_cluster <- as.data.frame(resultado_pca_cleveland$ind$coord)
+datos_cluster_CLE <- as.data.frame(resultado_pca_cleveland$ind$coord)
 
-dim(datos_cluster)
-all(sapply(datos_cluster, is.finite))
+dim(datos_cluster_CLE)
+all(sapply(datos_cluster_CLE, is.finite))
 ```
 
 **Visualización de gráfico de codo para Cleveland**
 
 ```{r metodo-codo-CLE, include=FALSE}
+k_values_CLE <- 2:10
+wss_CLE <- numeric(length(k_values_CLE))
 
-k_values <- 2:10 # Valores de k a evaluar
-
-wss <- numeric(length(k_values))  # Vector para almacenar la suma de cuadrados dentro de los clusters de cada valor k
-
-# Evaluar cada cantidad de clusters
-for (i in seq_along(k_values)) {
-  k <- k_values[i]
-  
-  # Aplicar k-means para el valor central de k 
-  modelo <- kmeans(
-    datos_cluster,
-    centers = k,
-    nstart = 25
-  )
-  
-  wss[i] <- modelo$tot.withinss
+for (i in seq_along(k_values_CLE)) {
+  k <- k_values_CLE[i]
+  modelo_CLE <- kmeans(datos_cluster_CLE, centers = k, nstart = 25)
+  wss_CLE[i] <- modelo_CLE$tot.withinss
 }
 
-resultados_codo <- data.frame(
-  clusters = k_values,
-  wss = wss
-)
-resultados_codo
+resultados_codo_CLE <- data.frame(clusters = k_values_CLE, wss = wss_CLE)
+resultados_codo_CLE
 ```
 
-
 ```{r plot-codo-CLE, echo = FALSE}
-ggplot(
-  resultados_codo,
-  aes(
-    x = clusters,
-    y = wss
-  )
-) + 
-  geom_line() +
-  geom_point(size = 3) +
-  scale_x_continuous(breaks = k_values) +
-  labs(
-    title = "Metodo del codo",
-    x = "Numero de clusters (k)",
-    y = "Suma de cuadrados dentro de los clusters (WSS)"
-  ) +
+ggplot(resultados_codo_CLE, aes(x = clusters, y = wss)) +
+  geom_line() + geom_point(size = 3) +
+  scale_x_continuous(breaks = k_values_CLE) +
+  labs(title = "Método del codo - Cleveland",
+       x = "Número de clusters (k)", y = "WSS") +
   theme_minimal()
 ```
 
 **Visualización de gráfico de silueta para Cleveland**
 
 ```{r metodo-silueta-CLE, include=FALSE}
+silhouette_promedio_CLE <- numeric(length(k_values_CLE))
 
-# Definir los valores de k que se van a evaluar
-k_values <- 2:10
+for (i in seq_along(k_values_CLE)) {
 
-# Crearemos un vector para guardar el promedio de silueta de cada k
-silhouette_promedio <- numeric(length(k_values))
+  k <- k_values_CLE[i]
 
-# Evaluaremos cada cantidad de clusters
-for (i in seq_along(k_values)) {
-  
-  k <- k_values[i]
-  
-  # Aplicar k-means para el valor de k actual
-  modelo <- kmeans(
-    datos_cluster,
+  modelo_CLE <- kmeans(
+    datos_cluster_CLE,
     centers = k,
     nstart = 25
   )
-  
-  # Calcular los valores de silueta
-  sil <- silhouette(
-    modelo$cluster,
-    dist(datos_cluster)
+
+  sil_CLE <- silhouette(
+    modelo_CLE$cluster,
+    dist(datos_cluster_CLE)
   )
-  
-  # Guardar el promedio de silueta
-  silhouette_promedio[i] <- mean(sil[, 3])
+
+  silhouette_promedio_CLE[i] <- mean(sil_CLE[, 3])
 }
 
-# se crea una tabla con los resultados
-resultados_silueta <- data.frame(
-  clusters = k_values,
-  silueta_promedio = silhouette_promedio
+resultados_silueta_CLE <- data.frame(
+  clusters = k_values_CLE,
+  silueta_promedio = silhouette_promedio_CLE
 )
 
-# Mostrar los resultados
-resultados_silueta
-
+resultados_silueta_CLE
 ```
-
 
 ```{r}
-# Identificar el número de clusters con mayor promedio de silueta
-mejor_k <- resultados_silueta$clusters[
-  which.max(resultados_silueta$silueta_promedio)
+mejor_k_CLE <- resultados_silueta_CLE$clusters[
+  which.max(resultados_silueta_CLE$silueta_promedio)
 ]
 
-# Obtener el valor máximo de silueta
-mejor_silueta <- max(
-  resultados_silueta$silueta_promedio
+mejor_silueta_CLE <- max(
+  resultados_silueta_CLE$silueta_promedio
 )
 
 cat(
-  "Número óptimo de clusters según el método de silueta:",
-  mejor_k,
+  "Número óptimo de clusters según el método de silueta (Cleveland):",
+  mejor_k_CLE,
   "\n"
 )
 
 cat(
-  "Promedio de silueta:",
-  round(mejor_silueta, 3),
+  "Promedio de silueta (Cleveland):",
+  round(mejor_silueta_CLE, 3),
   "\n"
 )
 ```
-
 
 ```{r, echo=FALSE}
 ggplot(
-  resultados_silueta,
+  resultados_silueta_CLE,
   aes(
     x = clusters,
     y = silueta_promedio
@@ -379,11 +339,11 @@ ggplot(
   geom_line() +
   geom_point(size = 3) +
   geom_vline(
-    xintercept = mejor_k,
+    xintercept = mejor_k_CLE,
     linetype = "dashed"
   ) +
   labs(
-    title = "Método de la silueta",
+    title = "Método de la silueta - Cleveland",
     x = "Número de clusters (k)",
     y = "Silueta promedio"
   ) +
@@ -393,60 +353,56 @@ ggplot(
 **Aplicación de k-means para Cleveland**
 
 ```{r aplicacion-kmeans-CLE}
-
-modelo_kmeans_k2 <- kmeans(
-  datos_cluster,
+modelo_kmeans_k2_CLE <- kmeans(
+  datos_cluster_CLE,
   centers = 2,
   nstart = 25
 )
 
-modelo_kmeans_k2$size
-modelo_kmeans_k2$centers
+modelo_kmeans_k2_CLE$size
+modelo_kmeans_k2_CLE$centers
 
-modelo_kmeans_k3 <- kmeans(
-  datos_cluster,
+modelo_kmeans_k3_CLE <- kmeans(
+  datos_cluster_CLE,
   centers = 3,
   nstart = 25
 )
 
-modelo_kmeans_k3$size
-modelo_kmeans_k3$centers
+modelo_kmeans_k3_CLE$size
+modelo_kmeans_k3_CLE$centers
 
-modelo_kmeans_k5 <- kmeans(
-  datos_cluster,
+modelo_kmeans_k5_CLE <- kmeans(
+  datos_cluster_CLE,
   centers = 5,
   nstart = 25
 )
 
-modelo_kmeans_k5$size
-modelo_kmeans_k5$centers
-
+modelo_kmeans_k5_CLE$size
+modelo_kmeans_k5_CLE$centers
 ```
 
-**Explicación:**
-  Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta (0.246), obteniendo dos grupos de tamaños 489 y 431 observaciones. Posteriormente, se verifica con el siguiente valor más alto, k=5 (0.226), obteniendo cinco grupos de tamaños más variables (233, 281, 90, 132 y 184).
+**Explicación:**  
+<!-- PENDIENTE: reescribir con los números reales de Cleveland (tamaños de
+     grupo y silueta óptima), ya que el texto anterior describía los resultados
+     del análisis principal (920 pacientes) y no los de este subconjunto de
+     299 pacientes. -->
 
 **Visualización de clusters Cleveland**
 
-```{r visualizacion-clusters-CLE-dim-1, echo=FALSE}
-datos_cluster_k2 <- datos_cluster %>%
-  mutate(cluster = factor(modelo_kmeans_k2$cluster))
+```{r visualizacion-clusters-CLE-combinaciones, echo=FALSE}
+datos_cluster_k2_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k2_CLE$cluster))
 
-datos_cluster_k3 <- datos_cluster %>%
-  mutate(cluster = factor(modelo_kmeans_k3$cluster))
+datos_cluster_k3_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k3_CLE$cluster))
 
-datos_cluster_k5 <- datos_cluster %>%
-  mutate(cluster = factor(modelo_kmeans_k5$cluster))
+datos_cluster_k5_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k5_CLE$cluster))
 
-# Las 6 combinaciones únicas posibles entre las 4 dimensiones
 pares_dims <- combn(c("Dim.1", "Dim.2", "Dim.3", "Dim.4"), 2, simplify = FALSE)
 
-# Función que arma un solo gráfico con los 6 pares como paneles
 comparar_todas_dims <- function(datos, titulo) {
 
-  # Se arma manualmente una tabla larga: una fila por cada
-  # combinación de par y observación, con las coordenadas X e Y
-  # ya identificadas según ese par
   datos_pares <- map_dfr(pares_dims, function(par) {
     datos %>%
       transmute(
@@ -466,7 +422,8 @@ comparar_todas_dims <- function(datos, titulo) {
     theme_minimal()
 }
 
-comparar_todas_dims(datos_cluster_k2, "Cleveland: todas las combinaciones de componentes (k = 2)")
-comparar_todas_dims(datos_cluster_k3, "Cleveland: todas las combinaciones de componentes (k = 3)")
-comparar_todas_dims(datos_cluster_k5, "Cleveland: todas las combinaciones de componentes (k = 5)")
+comparar_todas_dims(datos_cluster_k2_CLE, "Cleveland: todas las combinaciones de componentes (k = 2)")
+comparar_todas_dims(datos_cluster_k3_CLE, "Cleveland: todas las combinaciones de componentes (k = 3)")
+comparar_todas_dims(datos_cluster_k5_CLE, "Cleveland: todas las combinaciones de componentes (k = 5)")
 ```
+
