@@ -13,6 +13,7 @@ library(FactoMineR)
 library(factoextra)
 library(cluster)
 library(knitr)
+library(tidyr)
 ```
 
 **Explicación:**  

@@ -239,15 +239,18 @@ ggplot(datos_cluster_k5, aes(x = Dim.1, y = Dim.2, color = cluster)) +
 
 ## Clusterización con Cleveland
 
-```{r preparacion-cluster-CLE, include=FALSE}
+Se utiliza como variable de entrada el analisis que entregó PCA en el centro médico de Cleveland, el cual incluye variables `ca` y `thalch` que no pudieron ser agregados en los otros dos analisis de PCA debido al numero de valores faltantes. 
+
+```{r preparacion-cluster-CLE}
 set.seed(123)
 
 datos_cluster <- as.data.frame(resultado_pca_cleveland$ind$coord)
 
 dim(datos_cluster)
-anyNA(datos_cluster)
 all(sapply(datos_cluster, is.finite))
 ```
+
+**Visualización de gráfico de codo para Cleveland**
 
 ```{r metodo-codo-CLE, include=FALSE}
 
@@ -296,6 +299,7 @@ ggplot(
   theme_minimal()
 ```
 
+**Visualización de gráfico de silueta para Cleveland**
 
 ```{r metodo-silueta-CLE, include=FALSE}
 
@@ -339,7 +343,7 @@ resultados_silueta
 ```
 
 
-```{r, include=FALSE}
+```{r}
 # Identificar el número de clusters con mayor promedio de silueta
 mejor_k <- resultados_silueta$clusters[
   which.max(resultados_silueta$silueta_promedio)
@@ -386,7 +390,9 @@ ggplot(
   theme_minimal()
 ```
 
-```{r aplicacion-kmeans-CLE, }
+**Aplicación de k-means para Cleveland**
+
+```{r aplicacion-kmeans-CLE}
 
 modelo_kmeans_k2 <- kmeans(
   datos_cluster,
@@ -396,11 +402,16 @@ modelo_kmeans_k2 <- kmeans(
 
 modelo_kmeans_k2$size
 modelo_kmeans_k2$centers
-```
 
-Luego para verificar con el siguiente valor mas alto con k = 5 con un valor de 0.227
+modelo_kmeans_k3 <- kmeans(
+  datos_cluster,
+  centers = 3,
+  nstart = 25
+)
 
-```{r}
+modelo_kmeans_k3$size
+modelo_kmeans_k3$centers
+
 modelo_kmeans_k5 <- kmeans(
   datos_cluster,
   centers = 5,
@@ -409,33 +420,57 @@ modelo_kmeans_k5 <- kmeans(
 
 modelo_kmeans_k5$size
 modelo_kmeans_k5$centers
-```
 
+```
 
 **Explicación:**
   Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta (0.246), obteniendo dos grupos de tamaños 489 y 431 observaciones. Posteriormente, se verifica con el siguiente valor más alto, k=5 (0.226), obteniendo cinco grupos de tamaños más variables (233, 281, 90, 132 y 184).
 
-## Visualización de clusters
+**Visualización de clusters Cleveland**
+**DIM 1 vs DIM 2**
 
-```{r visualizacion-clusters-CLE}
+```{r visualizacion-clusters-CLE-dim-1-2, echo=FALSE}
 datos_cluster_k2 <- datos_cluster %>%
   mutate(cluster = factor(modelo_kmeans_k2$cluster))
+
+datos_cluster_k3 <- datos_cluster %>%
+  mutate(cluster = factor(modelo_kmeans_k3$cluster))
 
 datos_cluster_k5 <- datos_cluster %>%
   mutate(cluster = factor(modelo_kmeans_k5$cluster))
 
-ggplot(datos_cluster_k2, aes(x = Dim.1, y = Dim.2, color = cluster)) +
-  geom_point(alpha = 0.6) +
-  stat_ellipse(type = "norm", linewidth = 1) +
-  labs(title = "Clusters sobre los dos primeros componentes principales (k = 2)",
-       x = "Componente 1", y = "Componente 2", color = "Cluster") +
-  theme_minimal()
+# Función que arma un solo gráfico con tres paneles:
+# Dim.1 vs Dim.2, Dim.1 vs Dim.3 y Dim.1 vs Dim.4
+comparar_dim1 <- function(datos, titulo) {
 
-ggplot(datos_cluster_k5, aes(x = Dim.1, y = Dim.2, color = cluster)) +
-  geom_point(alpha = 0.6) +
-  stat_ellipse(type = "norm", linewidth = 1) +
-  labs(title = "Clusters sobre los dos primeros componentes principales (k = 5)",
-       x = "Componente 1", y = "Componente 2", color = "Cluster") +
-  theme_minimal()
+  datos_largo <- datos %>%
+    select(Dim.1, Dim.2, Dim.3, Dim.4, cluster) %>%
+    pivot_longer(
+      cols      = c(Dim.2, Dim.3, Dim.4),
+      names_to  = "comparacion",
+      values_to = "valor"
+    )
+
+  ggplot(datos_largo, aes(x = valor, y = Dim.1, color = cluster)) +
+    geom_point(alpha = 0.6) +
+    stat_ellipse(type = "norm", linewidth = 1) +
+    facet_wrap(
+      ~ comparacion,
+      scales   = "free_x",
+      labeller = labeller(comparacion = c(
+        "Dim.2" = "Dim.1 vs Dim.2",
+        "Dim.3" = "Dim.1 vs Dim.3",
+        "Dim.4" = "Dim.1 vs Dim.4"
+      ))
+    ) +
+    labs(title = titulo,
+         x = "Componente comparado", y = "Componente 1",
+         color = "Cluster") +
+    theme_minimal()
+}
+
+comparar_dim1(datos_cluster_k2, "Cleveland: Dim.1 contra el resto de componentes (k = 2)")
+comparar_dim1(datos_cluster_k3, "Cleveland: Dim.1 contra el resto de componentes (k = 3)")
+comparar_dim1(datos_cluster_k5, "Cleveland: Dim.1 contra el resto de componentes (k = 5)")
 ```
 
