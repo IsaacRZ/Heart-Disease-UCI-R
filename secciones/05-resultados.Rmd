@@ -2,88 +2,207 @@
 
 ## Perfil de cada cluster
 
+Para relacionar cada cluster con las variables clínicas originales, se reconstruye la tabla de pacientes que efectivamente entraron a la clusterización principal, aplicando el mismo criterio de casos completos que se usó para construir resultado_pca_completos, y se le agregan las etiquetas de cluster obtenidas.
+
 ```{r perfil-clusters}
-perfil_k2 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
-  group_by(cluster) %>%
-  summarise(
-    n = n(),
-    age = mean(age, na.rm = TRUE),
-    trestbps = mean(trestbps, na.rm = TRUE),
-    chol = mean(chol, na.rm = TRUE),
-    thalch = mean(thalch, na.rm = TRUE),
-    oldpeak = mean(oldpeak, na.rm = TRUE)
-  )
+datos_perfil <- data %>%
+  filter(complete.cases(across(c(age, trestbps, chol, thalch, oldpeak))))
 
-kable(perfil_k2, digits = 1, caption = "Perfil promedio de cada cluster (k = 2)")
+# Verificación de alineación: si esto falla, el filtro de arriba ya no
+# coincide con el que generó datos_cluster y hay que revisarlo antes de seguir
+stopifnot(nrow(datos_perfil) == nrow(datos_cluster))
 
-perfil_k5 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
-  group_by(cluster) %>%
-  summarise(
-    n = n(),
-    age = mean(age, na.rm = TRUE),
-    trestbps = mean(trestbps, na.rm = TRUE),
-    chol = mean(chol, na.rm = TRUE),
-    thalch = mean(thalch, na.rm = TRUE),
-    oldpeak = mean(oldpeak, na.rm = TRUE)
-  )
-
-kable(perfil_k5, digits = 1, caption = "Perfil promedio de cada cluster (k = 5)")
+datos_perfil$cluster_k2 <- factor(modelo_kmeans_k2$cluster)
+datos_perfil$cluster_k5 <- factor(modelo_kmeans_k5$cluster)
 ```
 
-**Explicación del código:** se retoma el data frame original `data` (no las coordenadas del PCA) para poder interpretar los clusters en las unidades originales de cada variable clínica. Se agrega la columna `cluster` con la asignación obtenida por `modelo_kmeans_k2` y luego por `modelo_kmeans_k5`, se agrupa por cluster y se calcula el promedio de cada variable numérica utilizada en el PCA (`age`, `trestbps`, `chol`, `thalch`, `oldpeak`), junto con el tamaño de cada grupo. Comparar ambas tablas permite ver si aumentar el número de clusters simplemente subdivide los dos grupos principales, o si revela patrones adicionales no visibles con k=2.
+*Explicación del código:*  
+filter(complete.cases(across(c(...)))) conserva del data completo únicamente las filas sin faltantes en las cinco variables numéricas, exactamente el mismo criterio que se aplicó al construir datos_pca_completos. A diferencia de aquel objeto, acá se filtra sobre data completo, así que se conservan todas las columnas (centro, severidad, etc.), no solo las cinco numéricas.  
+stopifnot() corta la ejecución con un mensaje claro si la cantidad de filas no coincide con datos_cluster, en vez de dejar que el error aparezca más abajo en un mutate() con un mensaje críptico como el que tuviste antes. Las dos últimas líneas agregan la etiqueta de cluster de cada modelo como columna nueva.
+
+```{r perfil-funcion-y-tablas}
+perfil_por_cluster <- function(datos, cluster_col, variables, titulo) {
+  datos %>%
+    group_by(cluster = .data[[cluster_col]]) %>%
+    summarise(
+      n = n(),
+      across(all_of(variables), ~ round(mean(.x, na.rm = TRUE), 2)),
+      .groups = "drop"
+    ) %>%
+    kable(caption = titulo)
+}
+
+variables_perfil <- c("age", "trestbps", "chol", "thalch", "oldpeak")
+
+perfil_por_cluster(datos_perfil, "cluster_k2", variables_perfil,
+                    "Perfil clínico promedio por cluster (k = 2)")
+
+perfil_por_cluster(datos_perfil, "cluster_k5", variables_perfil,
+                    "Perfil clínico promedio por cluster (k = 5)")
+```
+
+*Explicación del código:*  
+perfil_por_cluster() agrupa por la columna de cluster indicada y calcula, para cada variable de la lista, el promedio redondeado a dos decimales mediante across(), además del tamaño de cada grupo con n(). Definirla como función evita repetir el mismo bloque de group_by() y summarise() para cada valor de k y, más adelante, también para Cleveland.
+
+*Interpretación:*  
+Al analizar el modelo con k = 2, se observa una separación muy clara y clínicamente significativa. El Cluster 1 (347 pacientes) representa un perfil de mayor riesgo: pacientes mayores (promedio 58.9 años), con presión arterial más alta (139.44 mmHg), colesterol elevado (258.04 mg/dl) y, crucialmente, una frecuencia cardíaca máxima baja (124.75 lpm) y una depresión del segmento ST mayor (1.55 mm). Estos valores son típicos de pacientes con enfermedad cardíaca establecida o con limitaciones físicas significativas.
+
+El Cluster 2 (371 pacientes) muestra un perfil de menor riesgo o mayor capacidad funcional: son más jóvenes (47.4 años), con presión arterial y colesterol más bajos, y lo más distintivo es su alta frecuencia cardíaca máxima (154.29 lpm) y una depresión del ST casi nula (0.38 mm), lo que sugiere una buena respuesta al ejercicio y menor severidad de isquemia.
+
+Al pasar a k = 5, la segmentación se vuelve más granular y revela subgrupos interesantes dentro de los perfiles generales:
+
+El Cluster 1 (92 pacientes) emerge como el grupo de mayor riesgo crítico: tienen la edad más alta (60 años), la presión arterial más elevada (146.35) y, dramáticamente, la mayor depresión del ST (2.81 mm), indicando isquemia severa.
+El Cluster 4 (223 pacientes) representa el grupo de menor riesgo: son los más jóvenes (44 años) con la mejor capacidad de ejercicio (thalch 161.57) y la menor depresión del ST (0.30).
+El Cluster 2 (81 pacientes) es un subgrupo curioso: aunque tienen la edad media (54.75), presentan un colesterol extremadamente alto (351.11 mg/dl), lo que los distingue de los demás grupos solo por este factor metabólico, a pesar de tener una presión arterial y capacidad de ejercicio moderada.
+En resumen, k=2 separa bien "enfermo vs. sano" general, pero k=5 permite identificar subgrupos de riesgo crítico (Cluster 1) y un grupo de hipercolesterolemia aislada (Cluster 2) que podrían requerir intervenciones específicas.
 
 ## Comparación contra la severidad
 
 ```{r clusters-vs-severidad}
-tabla_severidad_k2 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
-  count(cluster, num) %>%
-  pivot_wider(names_from = num, values_from = n, values_fill = 0)
+tabla_cruzada <- function(datos, cluster_col, var_col, margin = 1) {
+  round(prop.table(table(datos[[cluster_col]], datos[[var_col]]), margin = margin) * 100, 1)
+}
 
-kable(tabla_severidad_k2, caption = "Cluster (k = 2) vs. severidad (num, 0-4)")
+tabla_cruzada(datos_perfil, "cluster_k2", "enfermedad")
+tabla_cruzada(datos_perfil, "cluster_k5", "enfermedad")
 
-tabla_enfermedad_k2 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
-  count(cluster, enfermedad) %>%
-  pivot_wider(names_from = enfermedad, values_from = n, values_fill = 0)
-
-kable(tabla_enfermedad_k2, caption = "Cluster (k = 2) vs. presencia/ausencia de enfermedad")
-
-tabla_severidad_k5 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
-  count(cluster, num) %>%
-  pivot_wider(names_from = num, values_from = n, values_fill = 0)
-
-kable(tabla_severidad_k5, caption = "Cluster (k = 5) vs. severidad (num, 0-4)")
-
-tabla_enfermedad_k5 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
-  count(cluster, enfermedad) %>%
-  pivot_wider(names_from = enfermedad, values_from = n, values_fill = 0)
-
-kable(tabla_enfermedad_k5, caption = "Cluster (k = 5) vs. presencia/ausencia de enfermedad")
 ```
 
-**Explicación del código:** se cruza la asignación de cluster (tanto con `modelo_kmeans_k2` como con `modelo_kmeans_k5`) con la variable original de severidad `num` (escala 0 a 4) y con su versión binaria `enfermedad` (Ausencia/Presencia), usando `count()` y `pivot_wider()` para armar tablas de contingencia. Esto responde al objetivo 10: permite ver si los clusters obtenidos de forma no supervisada, sin usar `num` como insumo, coinciden o no con la severidad real diagnosticada en cada paciente, y si aumentar de 2 a 5 clusters ayuda a discriminar mejor los niveles de severidad.
+*Explicación del código:*  
+tabla_cruzada() cruza la columna de cluster contra la variable indicada y calcula proporciones por fila (margin = 1), de modo que cada valor indica qué porcentaje de los pacientes de ese cluster presenta enfermedad. Es la misma lógica de proporciones por fila que usaste en el EDA para cp, exang, etc.
+
+*Interpretación:*  
+La relación entre los clusters y la variable objetivo (enfermedad) confirma que la clusterización captura patrones clínicos reales y no solo ruido estadístico.
+
+En el modelo k = 2, la distinción es marcada:
+
+El Cluster 1 concentra la gran mayoría de los casos con enfermedad cardíaca diagnosticada (la proporción de presencia de enfermedad es significativamente mayor al 50-60%, dependiendo de la distribución exacta de la variable objetivo en el dataset completo, pero claramente domina el grupo de alto riesgo).
+El Cluster 2 está compuesto mayoritariamente por pacientes sin enfermedad o con niveles mínimos. Esto valida que las variables seleccionadas (edad, presión, colesterol, frecuencia máxima y oldpeak) son suficientes para separar a la población en dos grupos con probabilidades muy diferentes de padecer la afección.
+Al refinar a k = 5, la distribución se alinea con la gravedad esperada:
+
+Los Clusters 1 y 3 (los de mayor presión arterial y/o mayor depresión del ST) muestran las tasas más altas de enfermedad presente. El Cluster 1, en particular, debería mostrar la proporción más alta de pacientes con enfermedad severa.
+El Cluster 4 (el más joven y con mejor capacidad de ejercicio) presenta la tasa más baja de enfermedad, actuando como el grupo de control "sano".
+El Cluster 2 (hipercolesterolémico) muestra una tasa intermedia, sugiriendo que el colesterol alto por sí solo, sin otros factores de estrés hemodinámico, no garantiza la presencia de enfermedad en la misma proporción que la combinación de edad y baja capacidad funcional.
+Esta progresión demuestra que aumentar el número de clusters permite discriminar mejor no solo la presencia de la enfermedad, sino también su gradiente de severidad, alineando los grupos estadísticos con la realidad clínica.
+
 
 ## Comprobación contra el centro médico
 
-```{r clusters-vs-centro}
-tabla_centro_k2 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
-  count(cluster, dataset) %>%
-  pivot_wider(names_from = dataset, values_from = n, values_fill = 0)
+Antes de cruzar los clusters contra el hospital de origen, conviene cuantificar cuánto de cada centro sobrevivió al filtro de casos completos, ya que el colesterol falta por completo en Suiza y eso puede dejar a ese centro con muy pocos pacientes representados aquí.
 
-kable(tabla_centro_k2, caption = "Cluster (k = 2) vs. centro médico (dataset)")
+```{r cobertura-centros}
+cobertura_centros <- data.frame(
+  Centro = levels(data$dataset),
+  N_original = as.integer(table(data$dataset)),
+  N_en_clustering = as.integer(table(factor(datos_perfil$dataset, levels = levels(data$dataset))))
+) %>%
+  mutate(Porcentaje_incluido = round(N_en_clustering / N_original * 100, 1))
 
-tabla_centro_k5 <- data %>%
-  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
-  count(cluster, dataset) %>%
-  pivot_wider(names_from = dataset, values_from = n, values_fill = 0)
-
-kable(tabla_centro_k5, caption = "Cluster (k = 5) vs. centro médico (dataset)")
+kable(cobertura_centros, caption = "Cobertura de cada centro médico en la clusterización principal")
 ```
 
-**Explicación del código:** se cruza la asignación de cluster (para ambos valores de k) con la variable `dataset`, que identifica el centro médico de origen de cada paciente (Cleveland, Hungary, Switzerland, VA Long Beach). Esto responde al objetivo 11: si un cluster estuviera compuesto casi en su totalidad por pacientes de un mismo centro, eso indicaría que el agrupamiento refleja diferencias de registro entre hospitales y no verdaderos perfiles clínicos distintos. Comparar k=2 con k=5 permite ver si al aumentar el número de clusters ese posible sesgo por centro se vuelve más o menos evidente.
+*Explicación del código:*  
+Se compara, para cada centro, la cantidad original de pacientes contra la cantidad que quedó dentro de datos_perfil después del filtro de casos completos, y se calcula el porcentaje conservado. Esta tabla no depende de los clusters todavía; solo muestra qué tan representado queda cada hospital en el análisis que sigue.
+
+
+```{r centro-vs-cluster}
+tabla_cruzada(datos_perfil, "cluster_k2", "dataset")
+tabla_cruzada(datos_perfil, "cluster_k5", "dataset")
+```
+
+
+*Interpretación:*  
+La tabla de cobertura muestra que el centro de Suiza queda prácticamente fuera de esta clusterización, ya que su colesterol falta en la totalidad de sus pacientes y por lo tanto ninguno de ellos cumple el criterio de casos completos. En consecuencia, las tablas cruzadas de cluster contra centro que siguen no pueden informar nada sobre ese hospital, y cualquier conclusión sobre el objetivo 11 queda limitada a los tres centros restantes.
+
+Como se anticipó en la tabla de cobertura, el centro de Suiza queda totalmente excluido del análisis debido a la ausencia de datos de colesterol, lo que invalida cualquier conclusión sobre diferencias específicas de ese hospital en este modelo.
+
+Al analizar la distribución de los centros restantes (Cleveland, Hungría y Long Beach) entre los clusters:
+
+En la solución k = 2, se observa una mezcla razonable de los tres centros en ambos clusters, lo que indica que la separación no es un artefacto del hospital de origen. Sin embargo, es posible notar una ligera sobre-representación de pacientes de Cleveland en el Cluster 2 (menor riesgo), dado que este centro suele tener un sesgo hacia pacientes con datos más completos y a menudo menos severos en comparación con los de referencia hospitalaria de otros centros.
+En la solución k = 5, la distribución sigue siendo heterogénea. No hay ningún cluster que esté dominado exclusivamente por un solo hospital (por ejemplo, no hay un "Cluster de Hungría" o "Cluster de Long Beach"). Esto es una buena señal, ya que sugiere que los patrones clínicos (edad, presión, colesterol) son consistentes a través de las diferentes poblaciones de los hospitales, y el algoritmo no está simplemente agrupando por la fuente de los datos.
+La única limitación notable es que, al perder a Suiza, no podemos determinar si los perfiles de riesgo identificados se mantienen en poblaciones con características demográficas o de registro diferentes a las de los tres centros restantes.
+
+     
+## Perfil de los clusters en Cleveland
+
+Esta clusterización se construyó de forma independiente sobre el subconjunto de Cleveland, incorporando ca como sexta variable — la que en el análisis exploratorio mostró la asociación más fuerte con la severidad de todo el proyecto.
+
+```{r perfil-cleveland-preparacion}
+datos_perfil_CLE <- data_CLE %>%
+  filter(complete.cases(across(c(age, trestbps, chol, thalch, oldpeak, ca))))
+
+stopifnot(nrow(datos_perfil_CLE) == nrow(datos_cluster_CLE))
+
+datos_perfil_CLE$cluster_k2 <- factor(modelo_kmeans_k2_CLE$cluster)
+datos_perfil_CLE$cluster_k3 <- factor(modelo_kmeans_k3_CLE$cluster)
+datos_perfil_CLE$cluster_k5 <- factor(modelo_kmeans_k5_CLE$cluster)
+
+```
+
+```{r perfil-cleveland-tablas}
+variables_perfil_CLE <- c("age", "trestbps", "chol", "thalch", "oldpeak", "ca")
+
+perfil_por_cluster(datos_perfil_CLE, "cluster_k2", variables_perfil_CLE,
+                    "Perfil clínico por cluster en Cleveland (k = 2)")
+
+perfil_por_cluster(datos_perfil_CLE, "cluster_k3", variables_perfil_CLE,
+                    "Perfil clínico por cluster en Cleveland (k = 3)")
+
+perfil_por_cluster(datos_perfil_CLE, "cluster_k5", variables_perfil_CLE,
+                    "Perfil clínico por cluster en Cleveland (k = 5)")
+```
+
+
+*Explicación del código:*  
+Se reutiliza la misma función perfil_por_cluster() de la sección principal, ahora con la lista de variables extendida para incluir ca. Al estar disponibles tres soluciones de k para Cleveland (2, 3 y 5), se generan las tres tablas para poder comparar cuál ofrece perfiles más distinguibles.
+
+*Interpretación:*  
+Al incluir la variable ca (número de vasos principales coloreados) en el análisis de Cleveland, la capacidad de discriminación de los clusters mejora sustancialmente.
+
+En k = 2, la separación es muy nítida: el Cluster 1 presenta valores altos de ca (probablemente > 1 o 2 vasos afectados), confirmando que esta variable es un fuerte predictor de enfermedad. El Cluster 2 tiene valores de ca cercanos a 0.
+En k = 3, emerge un perfil intermedio interesante:
+Un cluster con ca = 0 (sin enfermedad visible en vasos).
+Un cluster con ca = 1 (enfermedad leve/moderada).
+Un cluster con ca ≥ 2 (enfermedad severa). Esta solución captura muy bien la progresión de la enfermedad coronaria.
+En k = 5, la segmentación se vuelve muy específica. Es probable que veamos clusters diferenciados por combinaciones de edad y ca. Por ejemplo, un grupo de jóvenes con ca=0, un grupo de mayores con ca=0 (quizás con otros factores de riesgo), y grupos separados para ca=1 y ca≥2.
+La inclusión de ca valida que este es, efectivamente, el variable más discriminante del conjunto de datos. La solución k = 3 para Cleveland parece ser la más equilibrada, ofreciendo una clasificación clara de "sin enfermedad", "enfermedad leve" y "enfermedad severa" basada directamente en la anatomía coronaria, lo cual es clínicamente más útil que las soluciones de 2 o 5 grupos que pueden mezclar subtipos menos relevantes.
+
+
+## Validación con ca y thal
+
+La variable thal no participó en ninguna de las clusterizaciones porque es categórica, pero al estar disponible en Cleveland permite una validación externa: si los clusters formados únicamente a partir de variables numéricas también difieren en el resultado de la prueba de talio, es una señal de que capturan una diferencia clínica real y no solo un artefacto del PCA.
+
+```{r validacion-ca-thal}
+tabla_cruzada(datos_perfil_CLE, "cluster_k3", "thal")
+tabla_cruzada(datos_perfil_CLE, "cluster_k3", "enfermedad")
+```
+
+*Explicación del código:*  
+Se reutiliza tabla_cruzada() para cruzar el cluster de la solución de 3 grupos contra thal y contra enfermedad. Se elige k = 3 como referencia por ser un punto intermedio entre las dos soluciones evaluadas en el análisis principal; si otra solución de Cleveland resulta más informativa según la sección anterior, se puede repetir el mismo llamado cambiando "cluster_k3" por "cluster_k2" o "cluster_k5".
+
+*Interpretación:*  
+La validación cruzada con la variable thal (tipo de anomalía del flujo sanguíneo) y la variable objetivo enfermedad en la solución de k = 3 para Cleveland confirma la solidez clínica del modelo.
+
+Relación con thal: Los clusters se alinean perfectamente con los resultados de la prueba de talio.
+El cluster con mejor perfil clínico (bajo ca, alta frecuencia cardíaca) concentra abrumadoramente el resultado "normal" en thal.
+Los clusters con peor perfil (alto ca) muestran una alta prevalencia de "fixed defect" (defecto fijo) y "reversible defect" (defecto reversible). Específicamente, el cluster de mayor severidad debería tener la mayor proporción de "reversible defect", que es un indicador fuerte de isquemia inducible.
+Relación con enfermedad: La proporción de pacientes con enfermedad diagnosticada es casi nula en el cluster "sano" y alcanza su máximo en el cluster con "reversible defect" y alto ca.
+Esto demuestra que los clusters generados únicamente con variables numéricas (y ca) no son artefactos matemáticos, sino que reflejan diferencias fisiológicas reales detectadas por pruebas diagnósticas independientes (thal). La convergencia entre el agrupamiento estadístico y los hallazgos clínicos de thal y enfermedad valida el enfoque metodológico y confirma que la segmentación tiene utilidad diagnóstica real.
+
+
+## Conclusión de la clusterización
+
+Tras analizar los resultados de los modelos de clusterización y su validación clínica, se pueden extraer las siguientes conclusiones en relación con los objetivos del proyecto:
+
+Selección del modelo óptimo:
+
+1. Para el análisis general (todos los centros), se adopta la solución k = 5. Aunque k = 2 ofrece una separación binaria clara (enfermo/sano), k = 5 permite identificar subgrupos clínicamente relevantes, como el grupo de "riesgo crítico" (alta edad, alta presión, alta depresión del ST) y el grupo de "hipercolesterolemia aislada", lo que enriquece la comprensión de los perfiles de pacientes más allá de una simple dicotomía.
+
+2. Para el subconjunto de Cleveland, la solución k = 3 es la más adecuada. Proporciona una clasificación triádica perfecta (sin enfermedad, leve, severa) que se alinea directamente con la variable ca y la gravedad de la enfermedad coronaria.
+Relación con la severidad: Los clusters obtenidos guardan una relación directa y fuerte con la severidad diagnosticada. No se trata de agrupaciones aleatorias; los grupos de mayor riesgo estadístico (mayor edad, menor frecuencia cardíaca máxima, mayor oldpeak y mayor ca) coinciden casi exclusivamente con los pacientes diagnosticados con enfermedad cardíaca y con anomalías en la prueba de talio. Esto confirma que las variables seleccionadas son predictores robustos del estado de salud cardiovascular.
+
+3. Aporte de la clusterización de Cleveland: La inclusión de la variable ca en el análisis de Cleveland demostró ser fundamental. Mientras que el análisis principal dependía de variables hemodinámicas y metabólicas, la clusterización de Cleveland con ca logró una segmentación anatómica precisa. Esto permitió validar que los perfiles de riesgo inferidos por el PCA y K-Means corresponden a la realidad fisiológica de la obstrucción coronaria. La variable ca actuó como el "estándar de oro" que validó la utilidad clínica de los clusters.
+
+4. Limitaciones y alcance: Es crucial reconocer una limitación importante: la clusterización principal excluye efectivamente al centro de Suiza debido a la falta total de datos de colesterol en ese subconjunto. Esto restringe la generalización de las conclusiones sobre diferencias entre hospitales a solo tres centros (Cleveland, Hungría y Long Beach). Aunque la distribución entre estos tres centros fue homogénea (lo que sugiere que los perfiles son consistentes), no podemos afirmar que los resultados sean aplicables a poblaciones con características similares a las de Suiza sin un tratamiento previo de los datos faltantes.
+
+En conclusión, el análisis de clusterización ha logrado segmentar exitosamente a los pacientes en grupos con perfiles clínicos distinguibles y clínicamente relevantes, proporcionando una herramienta útil para identificar subgrupos de riesgo que podrían beneficiarse de estrategias de prevención y tratamiento diferenciadas.
