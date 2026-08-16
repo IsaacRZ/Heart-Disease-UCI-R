@@ -427,9 +427,8 @@ modelo_kmeans_k5$centers
   Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta (0.246), obteniendo dos grupos de tamaños 489 y 431 observaciones. Posteriormente, se verifica con el siguiente valor más alto, k=5 (0.226), obteniendo cinco grupos de tamaños más variables (233, 281, 90, 132 y 184).
 
 **Visualización de clusters Cleveland**
-**DIM 1 vs DIM 2**
 
-```{r visualizacion-clusters-CLE-dim-1-2, echo=FALSE}
+```{r visualizacion-clusters-CLE-dim-1, echo=FALSE}
 datos_cluster_k2 <- datos_cluster %>%
   mutate(cluster = factor(modelo_kmeans_k2$cluster))
 
@@ -439,38 +438,35 @@ datos_cluster_k3 <- datos_cluster %>%
 datos_cluster_k5 <- datos_cluster %>%
   mutate(cluster = factor(modelo_kmeans_k5$cluster))
 
-# Función que arma un solo gráfico con tres paneles:
-# Dim.1 vs Dim.2, Dim.1 vs Dim.3 y Dim.1 vs Dim.4
-comparar_dim1 <- function(datos, titulo) {
+# Las 6 combinaciones únicas posibles entre las 4 dimensiones
+pares_dims <- combn(c("Dim.1", "Dim.2", "Dim.3", "Dim.4"), 2, simplify = FALSE)
 
-  datos_largo <- datos %>%
-    select(Dim.1, Dim.2, Dim.3, Dim.4, cluster) %>%
-    pivot_longer(
-      cols      = c(Dim.2, Dim.3, Dim.4),
-      names_to  = "comparacion",
-      values_to = "valor"
-    )
+# Función que arma un solo gráfico con los 6 pares como paneles
+comparar_todas_dims <- function(datos, titulo) {
 
-  ggplot(datos_largo, aes(x = valor, y = Dim.1, color = cluster)) +
+  # Se arma manualmente una tabla larga: una fila por cada
+  # combinación de par y observación, con las coordenadas X e Y
+  # ya identificadas según ese par
+  datos_pares <- map_dfr(pares_dims, function(par) {
+    datos %>%
+      transmute(
+        eje_x       = .data[[par[1]]],
+        eje_y       = .data[[par[2]]],
+        cluster     = cluster,
+        comparacion = paste(par[1], "vs", par[2])
+      )
+  })
+
+  ggplot(datos_pares, aes(x = eje_x, y = eje_y, color = cluster)) +
     geom_point(alpha = 0.6) +
     stat_ellipse(type = "norm", linewidth = 1) +
-    facet_wrap(
-      ~ comparacion,
-      scales   = "free_x",
-      labeller = labeller(comparacion = c(
-        "Dim.2" = "Dim.1 vs Dim.2",
-        "Dim.3" = "Dim.1 vs Dim.3",
-        "Dim.4" = "Dim.1 vs Dim.4"
-      ))
-    ) +
-    labs(title = titulo,
-         x = "Componente comparado", y = "Componente 1",
-         color = "Cluster") +
+    facet_wrap(~ comparacion, scales = "free", ncol = 3) +
+    labs(title = titulo, x = "Primera dimensión del par",
+         y = "Segunda dimensión del par", color = "Cluster") +
     theme_minimal()
 }
 
-comparar_dim1(datos_cluster_k2, "Cleveland: Dim.1 contra el resto de componentes (k = 2)")
-comparar_dim1(datos_cluster_k3, "Cleveland: Dim.1 contra el resto de componentes (k = 3)")
-comparar_dim1(datos_cluster_k5, "Cleveland: Dim.1 contra el resto de componentes (k = 5)")
+comparar_todas_dims(datos_cluster_k2, "Cleveland: todas las combinaciones de componentes (k = 2)")
+comparar_todas_dims(datos_cluster_k3, "Cleveland: todas las combinaciones de componentes (k = 3)")
+comparar_todas_dims(datos_cluster_k5, "Cleveland: todas las combinaciones de componentes (k = 5)")
 ```
-
