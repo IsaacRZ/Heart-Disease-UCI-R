@@ -165,11 +165,9 @@ ggplot(
 
 **Interpretación:**
 
-El método de silueta evaluó diferentes cantidades de clusters, desde 2 hasta 10. El mayor valor promedio de silueta se obtuvo utilizando **3 clusters**, con un valor de aproximadamente **0.270**.
+El método de silueta evaluó diferentes cantidades de clusters, desde 2 hasta 10. El mayor valor promedio de silueta se obtuvo utilizando 2 clusters, con un valor de aproximadamente 0.246, seguido de cerca por la solución de 5 clusters, con 0.227.
 
-Esto indica que, entre las soluciones evaluadas, la configuración de 3 clusters presenta la mejor separación relativa entre los grupos y una mejor cohesión interna. Sin embargo, el valor obtenido no es especialmente alto, por lo que la estructura de los grupos no puede considerarse completamente definida. Aun así, dentro de las alternativas analizadas, **3 clusters representa la mejor opción según este método**.
-
-Por lo tanto, el resultado del método de silueta se utilizará como referencia para seleccionar la cantidad de grupos en la aplicación posterior del algoritmo k-means.
+Esto indica que, entre las soluciones evaluadas, la configuración de 2 clusters presenta la mejor separación relativa y cohesión interna según este criterio. El valor obtenido es moderado — no cercano a 1 — por lo que la estructura de los grupos no puede considerarse completamente definida, y la cercanía entre las dos mejores soluciones (2 y 5 clusters) sugiere que no hay una única segmentación dominante. Por esta razón se probarán ambas alternativas en la aplicación de k-means.
 
 ## Aplicación de k-means
 
@@ -207,9 +205,24 @@ Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos m
 
 ## Visualización de clusters
 
-<!-- PENDIENTE: representar los clusters sobre los dos primeros componentes
-     principales y comentar el grado de solapamiento observado. -->
-
 ```{r visualizacion-clusters}
+datos_cluster_k2 <- datos_cluster %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster))
 
+datos_cluster_k5 <- datos_cluster %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster))
+
+ggplot(datos_cluster_k2, aes(x = Dim.1, y = Dim.2, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  stat_ellipse(type = "norm", linewidth = 1) +
+  labs(title = "Clusters sobre los dos primeros componentes principales (k = 2)",
+       x = "Componente 1", y = "Componente 2", color = "Cluster") +
+  theme_minimal()
+
+ggplot(datos_cluster_k5, aes(x = Dim.1, y = Dim.2, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  stat_ellipse(type = "norm", linewidth = 1) +
+  labs(title = "Clusters sobre los dos primeros componentes principales (k = 5)",
+       x = "Componente 1", y = "Componente 2", color = "Cluster") +
+  theme_minimal()
 ```
