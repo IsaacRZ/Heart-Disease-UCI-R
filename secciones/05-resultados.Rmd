@@ -2,30 +2,88 @@
 
 ## Perfil de cada cluster
 
-<!-- PENDIENTE: tabla con los promedios de cada variable original por cluster y
-     descripción de cada perfil en términos clínicos. -->
-
 ```{r perfil-clusters}
+perfil_k2 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
+  group_by(cluster) %>%
+  summarise(
+    n = n(),
+    age = mean(age, na.rm = TRUE),
+    trestbps = mean(trestbps, na.rm = TRUE),
+    chol = mean(chol, na.rm = TRUE),
+    thalch = mean(thalch, na.rm = TRUE),
+    oldpeak = mean(oldpeak, na.rm = TRUE)
+  )
 
+kable(perfil_k2, digits = 1, caption = "Perfil promedio de cada cluster (k = 2)")
+
+perfil_k5 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
+  group_by(cluster) %>%
+  summarise(
+    n = n(),
+    age = mean(age, na.rm = TRUE),
+    trestbps = mean(trestbps, na.rm = TRUE),
+    chol = mean(chol, na.rm = TRUE),
+    thalch = mean(thalch, na.rm = TRUE),
+    oldpeak = mean(oldpeak, na.rm = TRUE)
+  )
+
+kable(perfil_k5, digits = 1, caption = "Perfil promedio de cada cluster (k = 5)")
 ```
+
+**Explicación del código:** se retoma el data frame original `data` (no las coordenadas del PCA) para poder interpretar los clusters en las unidades originales de cada variable clínica. Se agrega la columna `cluster` con la asignación obtenida por `modelo_kmeans_k2` y luego por `modelo_kmeans_k5`, se agrupa por cluster y se calcula el promedio de cada variable numérica utilizada en el PCA (`age`, `trestbps`, `chol`, `thalch`, `oldpeak`), junto con el tamaño de cada grupo. Comparar ambas tablas permite ver si aumentar el número de clusters simplemente subdivide los dos grupos principales, o si revela patrones adicionales no visibles con k=2.
 
 ## Comparación contra la severidad
 
-<!-- PENDIENTE: tabla cruzada entre cluster y num (o enfermedad) para evaluar si
-     los grupos obtenidos coinciden con la severidad diagnosticada. Responde
-     directamente al objetivo 10. -->
-
 ```{r clusters-vs-severidad}
+tabla_severidad_k2 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
+  count(cluster, num) %>%
+  pivot_wider(names_from = num, values_from = n, values_fill = 0)
 
+kable(tabla_severidad_k2, caption = "Cluster (k = 2) vs. severidad (num, 0-4)")
+
+tabla_enfermedad_k2 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
+  count(cluster, enfermedad) %>%
+  pivot_wider(names_from = enfermedad, values_from = n, values_fill = 0)
+
+kable(tabla_enfermedad_k2, caption = "Cluster (k = 2) vs. presencia/ausencia de enfermedad")
+
+tabla_severidad_k5 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
+  count(cluster, num) %>%
+  pivot_wider(names_from = num, values_from = n, values_fill = 0)
+
+kable(tabla_severidad_k5, caption = "Cluster (k = 5) vs. severidad (num, 0-4)")
+
+tabla_enfermedad_k5 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
+  count(cluster, enfermedad) %>%
+  pivot_wider(names_from = enfermedad, values_from = n, values_fill = 0)
+
+kable(tabla_enfermedad_k5, caption = "Cluster (k = 5) vs. presencia/ausencia de enfermedad")
 ```
+
+**Explicación del código:** se cruza la asignación de cluster (tanto con `modelo_kmeans_k2` como con `modelo_kmeans_k5`) con la variable original de severidad `num` (escala 0 a 4) y con su versión binaria `enfermedad` (Ausencia/Presencia), usando `count()` y `pivot_wider()` para armar tablas de contingencia. Esto responde al objetivo 10: permite ver si los clusters obtenidos de forma no supervisada, sin usar `num` como insumo, coinciden o no con la severidad real diagnosticada en cada paciente, y si aumentar de 2 a 5 clusters ayuda a discriminar mejor los niveles de severidad.
 
 ## Comprobación contra el centro médico
 
-<!-- PENDIENTE: tabla cruzada entre cluster y dataset. Si un cluster corresponde
-     casi por completo a un solo hospital, el agrupamiento estaría reflejando
-     diferencias de registro y no perfiles clínicos. Responde al objetivo 11. -->
-
 ```{r clusters-vs-centro}
+tabla_centro_k2 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster)) %>%
+  count(cluster, dataset) %>%
+  pivot_wider(names_from = dataset, values_from = n, values_fill = 0)
 
+kable(tabla_centro_k2, caption = "Cluster (k = 2) vs. centro médico (dataset)")
+
+tabla_centro_k5 <- data %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster)) %>%
+  count(cluster, dataset) %>%
+  pivot_wider(names_from = dataset, values_from = n, values_fill = 0)
+
+kable(tabla_centro_k5, caption = "Cluster (k = 5) vs. centro médico (dataset)")
 ```
 
+**Explicación del código:** se cruza la asignación de cluster (para ambos valores de k) con la variable `dataset`, que identifica el centro médico de origen de cada paciente (Cleveland, Hungary, Switzerland, VA Long Beach). Esto responde al objetivo 11: si un cluster estuviera compuesto casi en su totalidad por pacientes de un mismo centro, eso indicaría que el agrupamiento refleja diferencias de registro entre hospitales y no verdaderos perfiles clínicos distintos. Comparar k=2 con k=5 permite ver si al aumentar el número de clusters ese posible sesgo por centro se vuelve más o menos evidente.
