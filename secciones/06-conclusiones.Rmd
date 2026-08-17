@@ -84,21 +84,21 @@ Además, las representaciones gráficas de los componentes ayudaron a observar l
 
 Se aplicó el algoritmo K-means utilizando diferentes cantidades de clusters y se utilizaron métodos de evaluación como el codo y la silueta para apoyar la selección del número de grupos.
 
-En el análisis de silueta se evaluaron valores de k entre 2 y 10. El mayor promedio de silueta obtenido fue k = 3, con un valor de 0.2700.
+En el análisis de silueta se evaluaron valores de k entre 2 y 10. El mayor promedio de silueta obtenido fue k = 2, con un valor de 0.260.
 
 Los resultados fueron:
 
-- k = 2: 0.2388
-- k = 3: 0.2700
-- k = 4: 0.2422
-- k = 5: 0.2426
-- k = 6: 0.2379
-- k = 7: 0.2359
-- k = 8: 0.2152
-- k = 9: 0.2198
-- k = 10: 0.2159
+- k = 2: 0.2602
+- k = 3: 0.2464
+- k = 4: 0.2175
+- k = 5: 0.2300
+- k = 6: 0.1895
+- k = 7: 0.1939
+- k = 8: 0.1924
+- k = 9: 0.1962
+- k = 10: 0.2074
 
-Por lo tanto, desde el punto de vista exclusivo del método de silueta, k = 3 obtuvo la mejor separación promedio entre los grupos evaluados.
+Por lo tanto, desde el punto de vista exclusivo del método de silueta, k = 2 obtuvo la mejor separación promedio entre los grupos evaluados.
 
 Sin embargo, la selección final del número de clusters también consideró la interpretación de los grupos y el propósito del análisis. Para el análisis general se utilizó k = 5, debido a que esta solución permitió una segmentación más detallada de los perfiles clínicos.
 
@@ -132,7 +132,7 @@ En términos generales, el proyecto permitió completar un flujo de análisis de
 
 Los resultados muestran que los pacientes pueden agruparse en perfiles con características clínicas diferentes. Variables como la edad, presión arterial, colesterol, frecuencia cardíaca máxima y depresión del segmento ST contribuyeron a diferenciar estos perfiles.
 
-El método de silueta mostró que k = 3 obtuvo el mayor promedio de silueta entre los valores evaluados, con un valor de 0.2700. No obstante, el análisis general utilizó k = 5 debido a que esta solución permitió una segmentación más detallada y facilitó la interpretación de determinados subgrupos clínicos.
+El método de silueta mostró que k = 2 obtuvo el mayor promedio de silueta entre los valores evaluados, con un valor de 0.260. No obstante, el análisis general utilizó k = 5 debido a que esta solución permitió una segmentación más detallada y facilitó la interpretación de determinados subgrupos clínicos.
 
 Para Cleveland, la solución de k = 3 resultó especialmente útil debido a la incorporación de la variable `ca` y a la posibilidad de contrastar los clusters con variables clínicas adicionales.
 
@@ -202,7 +202,9 @@ Por lo tanto, los resultados deben considerarse como un análisis exploratorio y
 
 La selección del número de clusters constituye otra limitación del análisis.
 
-El método de silueta presentó su mejor resultado para `k = 3`, con un promedio de 0.2700. Sin embargo, para el análisis general se utilizó `k = 5`, debido a que esta solución permitió obtener una segmentación más detallada y facilitar la interpretación de determinados perfiles clínicos.
+El método de silueta presentó su mejor resultado para `k = 2`, con un promedio de 0.260. Sin embargo, para el análisis general se utilizó `k = 5`, debido a que esta solución permitió obtener una segmentación más detallada y facilitar la interpretación de determinados perfiles clínicos.
+
+Cabe señalar que, según el promedio de silueta, la segunda mejor opción correspondía a `k = 3` (0.246) y no a `k = 5` (0.230); la elección de `k = 5` se sostiene aquí en su valor interpretativo para diferenciar subgrupos clínicos, no en el ranking estricto de silueta.
 
 Esto demuestra que la elección del número de clusters no depende únicamente de un indicador estadístico, sino también del objetivo del análisis y de la interpretación de los grupos obtenidos.
 
