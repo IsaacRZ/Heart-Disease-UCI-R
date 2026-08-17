@@ -2,16 +2,231 @@
 
 ## Conclusiones generales
 
-<!-- PENDIENTE: recorrer los diez objetivos y responder cada uno con los
-     resultados obtenidos. -->
+El desarrollo del proyecto permitió realizar un análisis exploratorio y de clusterización sobre el conjunto de datos Heart Disease UCI, integrando diferentes etapas de preparación, exploración, reducción de dimensionalidad y aprendizaje no supervisado. A partir de los resultados obtenidos, fue posible identificar patrones en las características clínicas de los pacientes y analizar cómo estos perfiles se relacionan con la presencia y severidad de la enfermedad cardíaca.
+
+### Objetivo 1. Describir la estructura general del dataset
+
+El conjunto de datos utilizado contiene 920 observaciones y 16 variables relacionadas con características demográficas, clínicas y resultados de pruebas médicas. Se identificaron variables numéricas, categóricas y lógicas, incluyendo edad, presión arterial, colesterol, frecuencia cardíaca máxima, depresión del segmento ST, tipo de dolor de pecho, talasemia y número de vasos principales observados mediante fluoroscopía.
+
+La variable `num` fue utilizada como referencia para analizar la presencia y severidad de la enfermedad cardíaca. Para facilitar la interpretación en diferentes etapas del análisis, esta variable también fue transformada en una clasificación binaria, donde el valor 0 representa ausencia de enfermedad y los valores mayores que 0 representan presencia de enfermedad.
+
+En general, la estructura del dataset permitió desarrollar un análisis multidimensional de los pacientes y estudiar la relación entre diferentes características clínicas.
+
+### Objetivo 2. Evaluar la calidad de los datos
+
+El análisis de calidad permitió identificar valores faltantes y diferencias en la disponibilidad de información entre las variables y los centros médicos de procedencia.
+
+Uno de los principales problemas encontrados fue la ausencia de información en algunas variables clínicas. Esta situación tuvo un impacto especialmente importante en la variable `chol`, ya que el centro correspondiente a Suiza presenta ausencia de este dato en sus registros. Debido a que la clusterización principal se construyó utilizando casos completos, los pacientes de este centro no pudieron participar en dicho análisis.
+
+También se revisaron duplicados, tipos de datos e inconsistencias para garantizar que la información utilizada en las etapas posteriores fuera adecuada para el análisis.
+
+Por lo tanto, la calidad de los datos fue suficiente para realizar el proyecto, pero los valores faltantes representan una limitación importante que debe considerarse al interpretar los resultados.
+
+### Objetivo 3. Analizar las variables numéricas
+
+El análisis de las variables numéricas permitió estudiar características clínicas importantes como la edad, la presión arterial en reposo (`trestbps`), el colesterol (`chol`), la frecuencia cardíaca máxima alcanzada (`thalch`) y la depresión del segmento ST (`oldpeak`).
+
+Estas variables mostraron diferencias entre los grupos encontrados mediante la clusterización. En particular, los perfiles con mayor edad, mayor presión arterial, menor frecuencia cardíaca máxima y mayores valores de `oldpeak` presentaron características clínicas menos favorables.
+
+En el análisis con k = 2 se observó un grupo con mayor edad, presión arterial y `oldpeak`, además de una menor frecuencia cardíaca máxima, mientras que el otro grupo presentó un perfil más joven, con mayor frecuencia cardíaca máxima y menores valores de `oldpeak`.
+
+Estos resultados muestran que las variables numéricas seleccionadas contienen información relevante para diferenciar perfiles clínicos dentro de la población estudiada.
+
+### Objetivo 4. Explorar las variables categóricas
+
+Las variables categóricas permitieron complementar el análisis numérico mediante información relacionada con el sexo, tipo de dolor de pecho, electrocardiograma en reposo, pendiente del segmento ST y resultado de la prueba de talio.
+
+Aunque estas variables no fueron incorporadas directamente en la clusterización principal, posteriormente fueron utilizadas para interpretar y validar los grupos obtenidos.
+
+En particular, `thal` fue utilizada en el análisis de Cleveland como una variable externa de validación. Esto permitió comparar los grupos generados mediante variables numéricas con resultados de pruebas clínicas que no participaron directamente en la formación de los clusters.
+
+### Objetivo 5. Visualizar distribuciones, relaciones y valores atípicos
+
+Las visualizaciones exploratorias permitieron identificar la distribución de las variables, diferencias entre grupos y posibles valores extremos.
+
+El uso de histogramas, diagramas de caja y gráficos de dispersión facilitó la identificación de patrones que no serían tan evidentes únicamente mediante tablas de estadísticas descriptivas.
+
+Las visualizaciones también sirvieron como apoyo para comprender la relación entre las variables antes de aplicar PCA y K-means, permitiendo tomar decisiones sobre la preparación de los datos y la selección de variables utilizadas posteriormente.
+
+Por lo tanto, la visualización fue una etapa fundamental para comprender el comportamiento de los datos antes de realizar el modelado no supervisado.
+
+### Objetivo 6. Analizar correlaciones entre variables numéricas
+
+El análisis de correlación permitió identificar el grado de asociación entre las variables numéricas del conjunto de datos.
+
+Este análisis fue importante para comprender las relaciones existentes entre las variables clínicas y justificar la aplicación de una técnica de reducción de dimensionalidad como PCA.
+
+El PCA permitió resumir parte de la información contenida en las variables originales mediante componentes principales, facilitando el análisis posterior de los pacientes.
+
+### Objetivo 7. Preparar los datos para la clusterización
+
+Para realizar la clusterización se seleccionaron variables numéricas y se trabajó con registros que contaban con información completa en las variables utilizadas.
+
+En la clusterización principal se consideraron las variables `age`, `trestbps`, `chol`, `thalch` y `oldpeak`.
+
+También se verificó la existencia de valores faltantes y valores no finitos antes de aplicar el algoritmo de agrupamiento.
+
+Esta preparación permitió obtener un conjunto de datos adecuado para calcular distancias entre pacientes y formar grupos con características clínicas similares.
+
+Sin embargo, la eliminación de registros incompletos también redujo la cantidad de información disponible para el análisis, especialmente en el caso del centro de Suiza.
+
+### Objetivo 8. Aplicar Análisis de Componentes Principales
+
+El PCA permitió reducir la dimensionalidad de las variables numéricas utilizadas en la clusterización y representar a los pacientes mediante componentes principales.
+
+Las coordenadas obtenidas mediante PCA fueron utilizadas posteriormente como entrada para el proceso de clusterización. De esta forma, los pacientes pudieron ser comparados considerando una representación reducida de sus características numéricas.
+
+El uso de PCA facilitó la interpretación de la estructura multidimensional de los datos y permitió trabajar con componentes que resumen parte de la información original.
+
+Además, las representaciones gráficas de los componentes ayudaron a observar la distribución de los pacientes antes de interpretar los resultados de K-means.
+
+### Objetivo 9. Aplicar técnicas de clusterización y evaluar diferentes cantidades de grupos
+
+Se aplicó el algoritmo K-means utilizando diferentes cantidades de clusters y se utilizaron métodos de evaluación como el codo y la silueta para apoyar la selección del número de grupos.
+
+En el análisis de silueta se evaluaron valores de k entre 2 y 10. El mayor promedio de silueta obtenido fue k = 2, con un valor de 0.260.
+
+Los resultados fueron:
+
+- k = 2: 0.2602
+- k = 3: 0.2464
+- k = 4: 0.2175
+- k = 5: 0.2300
+- k = 6: 0.1895
+- k = 7: 0.1939
+- k = 8: 0.1924
+- k = 9: 0.1962
+- k = 10: 0.2074
+
+Por lo tanto, desde el punto de vista exclusivo del método de silueta, k = 2 obtuvo la mejor separación promedio entre los grupos evaluados.
+
+Sin embargo, la selección final del número de clusters también consideró la interpretación de los grupos y el propósito del análisis. Para el análisis general se utilizó k = 5, debido a que esta solución permitió una segmentación más detallada de los perfiles clínicos.
+
+Para el subconjunto de Cleveland se analizaron soluciones con k = 2, k = 3 y k = 5, encontrándose que k = 3 ofrecía una solución útil para interpretar diferentes perfiles clínicos.
+
+### Objetivo 10. Interpretar los clusters y compararlos contra la severidad
+
+La interpretación de los clusters permitió identificar perfiles clínicos diferenciados.
+
+En la solución general con k = 2 se observó una separación entre un grupo de pacientes con características menos favorables y otro con características relativamente más favorables. El primer grupo presentó mayor edad, presión arterial y `oldpeak`, además de una menor frecuencia cardíaca máxima. El segundo grupo presentó un perfil más joven, con mayor frecuencia cardíaca máxima y menor depresión del segmento ST.
+
+La solución con k = 5 permitió realizar una segmentación más detallada y observar características específicas dentro de la población estudiada, incluyendo grupos diferenciados por edad, presión arterial, frecuencia cardíaca, `oldpeak` y colesterol.
+
+La comparación de los clusters con la variable `enfermedad` permitió comprobar que los perfiles obtenidos presentan diferencias en la distribución de pacientes con y sin enfermedad cardíaca. Esto indica que la clusterización encontró patrones relacionados con la variable objetivo, aunque esta variable no fue utilizada directamente para construir los clusters.
+
+En Cleveland, la inclusión de `ca` permitió obtener información adicional sobre los perfiles de los pacientes y relacionarlos con características relacionadas con el compromiso coronario.
+
+### Objetivo 11. Verificar la relación de los clusters con las características clínicas y el centro médico
+
+La comparación de los clusters con el centro médico permitió comprobar que los grupos no pueden interpretarse únicamente como una separación por hospital de procedencia.
+
+En los centros que permanecieron representados en la clusterización principal, Cleveland, Hungría y Long Beach, se observaron pacientes distribuidos entre diferentes clusters. Esto indica que los grupos identificados no corresponden simplemente a un único centro médico.
+
+Sin embargo, el centro de Suiza quedó excluido de la clusterización principal debido a la ausencia de información de colesterol. Por esta razón, no es posible determinar mediante este modelo si los perfiles encontrados también se presentan de la misma manera en los pacientes de dicho centro.
+
+La validación realizada sobre Cleveland también permitió comparar los clusters con variables que no participaron directamente en la clusterización, particularmente `thal` y `enfermedad`. Esta comparación aportó evidencia adicional de que los grupos obtenidos mediante variables numéricas presentan diferencias clínicas que también pueden observarse en otras variables diagnósticas.
+
+### Conclusión final del proyecto
+
+En términos generales, el proyecto permitió completar un flujo de análisis de datos aplicado a un conjunto de información clínica real. El proceso incluyó la revisión de la estructura y calidad de los datos, análisis exploratorio, estudio de correlaciones, preparación de variables, reducción de dimensionalidad mediante PCA y agrupamiento mediante K-means.
+
+Los resultados muestran que los pacientes pueden agruparse en perfiles con características clínicas diferentes. Variables como la edad, presión arterial, colesterol, frecuencia cardíaca máxima y depresión del segmento ST contribuyeron a diferenciar estos perfiles.
+
+El método de silueta mostró que k = 2 obtuvo el mayor promedio de silueta entre los valores evaluados, con un valor de 0.260. No obstante, el análisis general utilizó k = 5 debido a que esta solución permitió una segmentación más detallada y facilitó la interpretación de determinados subgrupos clínicos.
+
+Para Cleveland, la solución de k = 3 resultó especialmente útil debido a la incorporación de la variable `ca` y a la posibilidad de contrastar los clusters con variables clínicas adicionales.
+
+La comparación de los clusters con la variable `enfermedad`, así como la validación mediante `thal` en Cleveland, permitió observar que los grupos obtenidos mediante aprendizaje no supervisado presentan diferencias clínicas relevantes. Esto respalda la utilidad del clustering como herramienta exploratoria para descubrir perfiles de pacientes.
+
+Sin embargo, los resultados no deben interpretarse como un sistema de diagnóstico. La clusterización identifica grupos de pacientes con características similares, pero no determina por sí misma si una persona tiene o tendrá una enfermedad cardíaca.
+
+Finalmente, el proyecto demuestra que las técnicas de análisis exploratorio, PCA y K-means pueden combinarse para transformar un conjunto de datos clínicos complejo en información más fácil de interpretar. Los perfiles encontrados pueden servir como punto de partida para investigaciones posteriores que incorporen más variables, métodos de tratamiento de datos faltantes, algoritmos de agrupamiento alternativos y conjuntos de datos clínicos más amplios.
 
 ## Limitaciones del análisis
 
-<!-- PENDIENTE: mencionar la alta proporción de faltantes en algunas variables, la
-     exclusión de las variables categóricas del agrupamiento, las limitaciones de
-     k-means frente a grupos de forma irregular y el alcance restringido a los
-     cuatro centros incluidos en el dataset. -->
+El análisis presenta varias limitaciones que deben considerarse al momento de interpretar los resultados obtenidos.
 
+### Valores faltantes
+
+La presencia de valores faltantes redujo la cantidad de pacientes disponibles para algunas etapas del análisis. El caso más importante corresponde al centro de Suiza, donde la variable `chol` presenta ausencia de información en sus registros.
+
+Debido a que la clusterización principal se realizó utilizando casos completos, los pacientes de este centro no pudieron participar en dicho análisis. Por esta razón, los resultados obtenidos mediante K-means no pueden generalizarse automáticamente a los cuatro centros originales del dataset.
+
+### Exclusión de variables categóricas del clustering
+
+La clusterización principal se realizó utilizando variables numéricas como `age`, `trestbps`, `chol`, `thalch` y `oldpeak`.
+
+Variables clínicas importantes como `sex`, `cp`, `restecg`, `slope` y `thal` no participaron directamente en la formación de los clusters. Aunque algunas de estas variables fueron utilizadas posteriormente para interpretar y validar los grupos, su exclusión del proceso de agrupamiento significa que parte de la información clínica disponible no fue considerada directamente por K-means.
+
+### Limitaciones del algoritmo K-means
+
+K-means agrupa los pacientes buscando minimizar la distancia entre cada observación y el centro de su cluster. Por esta razón, el algoritmo funciona mejor cuando los grupos presentan una estructura adecuada para este tipo de agrupamiento.
+
+Si los datos presentan grupos con formas irregulares, tamaños muy diferentes o relaciones más complejas, K-means puede no representar completamente la estructura real de los datos.
+
+Por lo tanto, los clusters obtenidos deben interpretarse como agrupaciones estadísticas basadas en las variables seleccionadas y no como categorías clínicas definitivas.
+
+### Dependencia de las variables seleccionadas
+
+Los resultados de la clusterización dependen directamente de las variables utilizadas para construir los grupos.
+
+En este proyecto se utilizaron principalmente variables numéricas relacionadas con características clínicas de los pacientes. Incluir o excluir una variable puede modificar las distancias entre pacientes y, por lo tanto, cambiar la composición de los clusters.
+
+Esto significa que diferentes selecciones de variables podrían producir agrupaciones diferentes.
+
+### Pérdida de información por casos completos
+
+El uso de casos completos permitió trabajar con registros que tenían información disponible en todas las variables seleccionadas para el análisis.
+
+Sin embargo, esta estrategia también provocó la eliminación de pacientes que presentaban datos faltantes. Esto reduce la cantidad de observaciones utilizadas y puede afectar la representación de determinados grupos de pacientes.
+
+Como alternativa para futuros análisis, podrían evaluarse métodos de imputación de datos faltantes y comparar sus resultados con los obtenidos mediante la eliminación de casos incompletos.
+
+### Limitación del conjunto de datos
+
+Aunque el dataset contiene información procedente de diferentes centros médicos, la disponibilidad de datos no es igual para todos ellos.
+
+La ausencia de información en determinadas variables, especialmente en `chol`, afecta la representación de algunos centros en la clusterización. Además, el conjunto de datos corresponde a una población específica y no necesariamente representa a todas las poblaciones de pacientes con enfermedad cardíaca.
+
+Por esta razón, los resultados deben interpretarse dentro del contexto del dataset utilizado.
+
+### Interpretación clínica
+
+Los clusters obtenidos representan grupos estadísticos de pacientes con características similares. No representan diagnósticos médicos ni categorías clínicas oficiales.
+
+La relación observada entre determinados clusters y la variable `enfermedad` permite identificar patrones dentro de los datos, pero no demuestra que pertenecer a un determinado cluster sea una causa de la enfermedad.
+
+Por lo tanto, los resultados deben considerarse como un análisis exploratorio y no como una herramienta de diagnóstico médico.
+
+### Selección del número de clusters
+
+La selección del número de clusters constituye otra limitación del análisis.
+
+El método de silueta presentó su mejor resultado para `k = 2`, con un promedio de 0.260. Sin embargo, para el análisis general se utilizó `k = 5`, debido a que esta solución permitió obtener una segmentación más detallada y facilitar la interpretación de determinados perfiles clínicos.
+
+Cabe señalar que, según el promedio de silueta, la segunda mejor opción correspondía a `k = 3` (0.246) y no a `k = 5` (0.230); la elección de `k = 5` se sostiene aquí en su valor interpretativo para diferenciar subgrupos clínicos, no en el ranking estricto de silueta.
+
+Esto demuestra que la elección del número de clusters no depende únicamente de un indicador estadístico, sino también del objetivo del análisis y de la interpretación de los grupos obtenidos.
+
+### Análisis específico de Cleveland
+
+El análisis realizado sobre Cleveland incorporó la variable `ca`, lo que permitió realizar una interpretación adicional de los perfiles obtenidos.
+
+Sin embargo, este análisis se realizó únicamente sobre el subconjunto correspondiente a Cleveland, por lo que sus resultados no deben extrapolarse directamente a los demás centros médicos incluidos en el dataset.
+
+### Generalización de los resultados
+
+Los resultados obtenidos corresponden al conjunto de datos analizado y a las variables seleccionadas durante el proyecto.
+
+Por lo tanto, no se puede afirmar que los perfiles encontrados representen necesariamente a todos los pacientes con enfermedad cardíaca fuera de esta población.
+
+Para aumentar la capacidad de generalización sería necesario utilizar conjuntos de datos más amplios y diversos, incorporar información de otras poblaciones y validar los resultados utilizando métodos de análisis adicionales.
+
+### Consideración final sobre las limitaciones
+
+En conjunto, estas limitaciones no invalidan el análisis realizado. Sin embargo, indican que los resultados deben interpretarse como una exploración de patrones presentes en los datos y no como conclusiones clínicas definitivas.
+
+El proyecto demuestra la utilidad de combinar análisis exploratorio, PCA y K-means para identificar perfiles de pacientes, pero futuras investigaciones podrían mejorar el análisis mediante métodos de tratamiento de valores faltantes, inclusión de más variables clínicas, algoritmos de clustering alternativos y validación con conjuntos de datos independientes.
 ## Referencias
 
 <div class="card-heart">

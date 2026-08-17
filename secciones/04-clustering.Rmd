@@ -2,42 +2,439 @@
 
 ## Preparación para clusterización
 
-<!-- PENDIENTE: construir el conjunto final de datos escalados, comprobar
-     dimensiones y ausencia de valores no finitos. -->
-
 ```{r preparacion-cluster}
 set.seed(123)
+
+datos_cluster <- as.data.frame(resultado_pca_completos$ind$coord)
+
+dim(datos_cluster)
+anyNA(datos_cluster)
+all(sapply(datos_cluster, is.finite))
 ```
 
 **Explicación del código:**  
 La función `set.seed()` fija el generador de números aleatorios. Esto es necesario porque k-means inicia sus centroides de forma aleatoria y, sin una semilla fija, cada ejecución del documento produciría clusters distintos. Fijarla garantiza que los resultados descritos en la interpretación coincidan con los que genera el documento al ser compilado nuevamente.
 
+Para la clusterización se utilizan las coordenadas de los individuos sobre los componentes principales obtenidos en el PCA (`resultado_pca$ind$coord`), en lugar de las variables originales. Esto se debe a que el PCA ya generó variables numéricas, no correlacionadas entre sí y en una escala comparable, lo cual es precisamente lo que k-means necesita para funcionar correctamente.
+
+- `as.data.frame(resultado_pca$ind$coord)` extrae las coordenadas de cada paciente sobre los 4 componentes principales calculados y las guarda en `datos_cluster`, el conjunto de entrada para k-means.
+- `dim(datos_cluster)` verifica que el número de filas coincide con la cantidad de pacientes utilizados en el PCA, y que hay 4 columnas (una por componente).
+- `anyNA(datos_cluster)` comprueba que no queden valores faltantes, ya que `kmeans()` no admite `NA`.
+- `all(sapply(datos_cluster, is.finite))` verifica que todos los valores sean finitos (sin `Inf` o `-Inf`), evitando errores al calcular distancias entre observaciones.
+
 ## Método del codo
 
 ```{r metodo-codo}
 
+k_values <- 2:10 # Valores de k a evaluar
+
+wss <- numeric(length(k_values))  # Vector para almacenar la suma de cuadrados dentro de los clusters de cada valor k
+
+# Evaluar cada cantidad de clusters
+for (i in seq_along(k_values)) {
+  k <- k_values[i]
+  
+  # Aplicar k-means para el valor central de k 
+  modelo <- kmeans(
+    datos_cluster,
+    centers = k,
+    nstart = 25
+  )
+  
+  wss[i] <- modelo$tot.withinss
+}
+
+resultados_codo <- data.frame(
+  clusters = k_values,
+  wss = wss
+)
+resultados_codo
 ```
+
+
+```{r}
+ggplot(
+  resultados_codo,
+  aes(
+    x = clusters,
+    y = wss
+  )
+) + 
+  geom_line() +
+  geom_point(size = 3) +
+  scale_x_continuous(breaks = k_values) +
+  labs(
+    title = "Metodo del codo",
+    x = "Numero de clusters (k)",
+    y = "Suma de cuadrados dentro de los clusters (WSS)"
+  ) +
+  theme_minimal()
+```
+
+**Interpretación:**
+Mirando el gráfico, la línea baja bastante rápido al principio y después se va aplanando poco a poco, pero no hay un punto donde se note un quiebre fuerte tipo "codo" marcado. Es más una curva que se suaviza de a poco que un ángulo claro.
+
+De 2 a 5 clusters todavía baja harto (entre 12 % y 14 % cada vez que se agrega un cluster). Después de 5 clusters la bajada se hace más lenta, como menos del 8 % por cada cluster que se agrega, y de ahí en adelante casi no cambia mucho hasta llegar a 10.
+
+Si tuviera que marcar un punto donde la curva empieza a aplanarse más, sería entre 5 y 6 clusters, que es más o menos donde el ritmo de bajada cambia. Pero como no es un quiebre tan claro, este método por sí solo no ayuda mucho a decidir el número de clusters. Por eso se terminó usando el resultado del método de silueta como guía principal, y se probaron los dos valores que dieron mejor puntaje ahí (k = 2 y k = 5).
 
 ## Método de silueta
 
 ```{r metodo-silueta}
 
+# Definir los valores de k que se van a evaluar
+k_values <- 2:10
+
+# Crearemos un vector para guardar el promedio de silueta de cada k
+silhouette_promedio <- numeric(length(k_values))
+
+# Evaluaremos cada cantidad de clusters
+for (i in seq_along(k_values)) {
+  
+  k <- k_values[i]
+  
+  # Aplicar k-means para el valor de k actual
+  modelo <- kmeans(
+    datos_cluster,
+    centers = k,
+    nstart = 25
+  )
+  
+  # Calcular los valores de silueta
+  sil <- silhouette(
+    modelo$cluster,
+    dist(datos_cluster)
+  )
+  
+  # Guardar el promedio de silueta
+  silhouette_promedio[i] <- mean(sil[, 3])
+}
+
+# se crea una tabla con los resultados
+resultados_silueta <- data.frame(
+  clusters = k_values,
+  silueta_promedio = silhouette_promedio
+)
+
+# Mostrar los resultados
+resultados_silueta
+
 ```
+
+
+```{r}
+# Identificar el número de clusters con mayor promedio de silueta
+mejor_k <- resultados_silueta$clusters[
+  which.max(resultados_silueta$silueta_promedio)
+]
+
+# Obtener el valor máximo de silueta
+mejor_silueta <- max(
+  resultados_silueta$silueta_promedio
+)
+
+cat(
+  "Número óptimo de clusters según el método de silueta:",
+  mejor_k,
+  "\n"
+)
+
+cat(
+  "Promedio de silueta:",
+  round(mejor_silueta, 3),
+  "\n"
+)
+```
+
+
+```{r}
+ggplot(
+  resultados_silueta,
+  aes(
+    x = clusters,
+    y = silueta_promedio
+  )
+) +
+  geom_line() +
+  geom_point(size = 3) +
+  geom_vline(
+    xintercept = mejor_k,
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Método de la silueta",
+    x = "Número de clusters (k)",
+    y = "Silueta promedio"
+  ) +
+  theme_minimal()
+```
+
+**Interpretación:**
+
+Al ver la tabla y el gráfico, el valor más alto de silueta se da con 2 clusters, con un promedio de 0.246. Después de ahí el valor baja un poco con 3 y 4 clusters, y vuelve a subir casi al mismo nivel con 5 clusters (0.227), que queda como el segundo mejor resultado.
+
+El hecho de que 2 y 5 clusters den valores parecidos y no haya un valor que se despegue claramente de los demás dice que la separación entre grupos no es súper marcada. Un valor de 0.246 no es malo, pero tampoco es alto (cerca de 1 sería una separación casi perfecta), así que los grupos existen pero se mezclan un poco entre sí.
+
+Por esta razón se decidió no quedarse con un solo número de clusters, sino probar tanto k = 2 como k = 5 en la aplicación de k-means, y comparar cuál de los dos da una interpretación más útil para describir a los pacientes.
 
 ## Aplicación de k-means
 
-<!-- PENDIENTE: aplicar kmeans con la cantidad de clusters seleccionada, usando
-     nstart = 25 para reducir la dependencia de la inicialización aleatoria. -->
+Aplicación a partir los valores mas altos dados por el método de la silueta ya que el método del codo dio resultados ambiguos
+
+Primero k = 2 con un valor de 0.246 (el mas alto)
 
 ```{r aplicacion-kmeans}
 
+modelo_kmeans_k2 <- kmeans(
+  datos_cluster,
+  centers = 2,
+  nstart = 25
+)
+
+modelo_kmeans_k2$size
+modelo_kmeans_k2$centers
 ```
+
+Luego para verificar con el siguiente valor mas alto con k = 5 con un valor de 0.227
+
+```{r}
+modelo_kmeans_k5 <- kmeans(
+  datos_cluster,
+  centers = 5,
+  nstart = 25
+)
+
+modelo_kmeans_k5$size
+modelo_kmeans_k5$centers
+```
+
+
+**Explicación:**
+Aunque en la sección de PCA se validó que la imputación de `chol` no distorsionaba 
+significativamente la varianza explicada, se optó por utilizar la versión de casos 
+completos (`resultado_pca_completos`, 718 pacientes) como base para la clusterización, 
+priorizando trabajar únicamente con datos observados directamente al momento de 
+perfilar clínicamente cada grupo.
+
+Se aplica el algoritmo de k-means a partir de los valores más altos obtenidos mediante 
+el método de silueta, ya que el método del codo arrojó resultados ambiguos sin un punto 
+de inflexión claro. Primero se prueba con k=2, el valor con mayor puntaje de silueta 
+(0.246), obteniendo dos grupos de tamaños 347 y 371 observaciones. Posteriormente, se 
+verifica con el siguiente valor más alto, k=5 (0.227), obteniendo cinco grupos de 
+tamaños más variables (92, 81, 115, 223 y 207).
 
 ## Visualización de clusters
 
-<!-- PENDIENTE: representar los clusters sobre los dos primeros componentes
-     principales y comentar el grado de solapamiento observado. -->
-
 ```{r visualizacion-clusters}
+datos_cluster_k2 <- datos_cluster %>%
+  mutate(cluster = factor(modelo_kmeans_k2$cluster))
 
+datos_cluster_k5 <- datos_cluster %>%
+  mutate(cluster = factor(modelo_kmeans_k5$cluster))
+
+ggplot(datos_cluster_k2, aes(x = Dim.1, y = Dim.2, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  stat_ellipse(type = "norm", linewidth = 1) +
+  labs(title = "Clusters sobre los dos primeros componentes principales (k = 2)",
+       x = "Componente 1", y = "Componente 2", color = "Cluster") +
+  theme_minimal()
+
+ggplot(datos_cluster_k5, aes(x = Dim.1, y = Dim.2, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  stat_ellipse(type = "norm", linewidth = 1) +
+  labs(title = "Clusters sobre los dos primeros componentes principales (k = 5)",
+       x = "Componente 1", y = "Componente 2", color = "Cluster") +
+  theme_minimal()
 ```
+
+
+## Clusterización con Cleveland
+
+Se utiliza como variable de entrada el análisis que entregó PCA en el centro médico de Cleveland, el cual incluye las variables `ca` y `thalch` que no pudieron ser agregadas en los otros dos análisis de PCA debido al número de valores faltantes.
+
+```{r preparacion-cluster-CLE}
+set.seed(123)
+
+datos_cluster_CLE <- as.data.frame(resultado_pca_cleveland$ind$coord)
+
+dim(datos_cluster_CLE)
+all(sapply(datos_cluster_CLE, is.finite))
+```
+
+**Visualización de gráfico de codo para Cleveland**
+
+```{r metodo-codo-CLE, include=FALSE}
+k_values_CLE <- 2:10
+wss_CLE <- numeric(length(k_values_CLE))
+
+for (i in seq_along(k_values_CLE)) {
+  k <- k_values_CLE[i]
+  modelo_CLE <- kmeans(datos_cluster_CLE, centers = k, nstart = 25)
+  wss_CLE[i] <- modelo_CLE$tot.withinss
+}
+
+resultados_codo_CLE <- data.frame(clusters = k_values_CLE, wss = wss_CLE)
+resultados_codo_CLE
+```
+
+```{r plot-codo-CLE, echo = FALSE}
+ggplot(resultados_codo_CLE, aes(x = clusters, y = wss)) +
+  geom_line() + geom_point(size = 3) +
+  scale_x_continuous(breaks = k_values_CLE) +
+  labs(title = "Método del codo - Cleveland",
+       x = "Número de clusters (k)", y = "WSS") +
+  theme_minimal()
+```
+
+**Visualización de gráfico de silueta para Cleveland**
+
+```{r metodo-silueta-CLE, include=FALSE}
+silhouette_promedio_CLE <- numeric(length(k_values_CLE))
+
+for (i in seq_along(k_values_CLE)) {
+
+  k <- k_values_CLE[i]
+
+  modelo_CLE <- kmeans(
+    datos_cluster_CLE,
+    centers = k,
+    nstart = 25
+  )
+
+  sil_CLE <- silhouette(
+    modelo_CLE$cluster,
+    dist(datos_cluster_CLE)
+  )
+
+  silhouette_promedio_CLE[i] <- mean(sil_CLE[, 3])
+}
+
+resultados_silueta_CLE <- data.frame(
+  clusters = k_values_CLE,
+  silueta_promedio = silhouette_promedio_CLE
+)
+
+resultados_silueta_CLE
+```
+
+```{r}
+mejor_k_CLE <- resultados_silueta_CLE$clusters[
+  which.max(resultados_silueta_CLE$silueta_promedio)
+]
+
+mejor_silueta_CLE <- max(
+  resultados_silueta_CLE$silueta_promedio
+)
+
+cat(
+  "Número óptimo de clusters según el método de silueta (Cleveland):",
+  mejor_k_CLE,
+  "\n"
+)
+
+cat(
+  "Promedio de silueta (Cleveland):",
+  round(mejor_silueta_CLE, 3),
+  "\n"
+)
+```
+
+```{r, echo=FALSE}
+ggplot(
+  resultados_silueta_CLE,
+  aes(
+    x = clusters,
+    y = silueta_promedio
+  )
+) +
+  geom_line() +
+  geom_point(size = 3) +
+  geom_vline(
+    xintercept = mejor_k_CLE,
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Método de la silueta - Cleveland",
+    x = "Número de clusters (k)",
+    y = "Silueta promedio"
+  ) +
+  theme_minimal()
+```
+
+**Aplicación de k-means para Cleveland**
+
+```{r aplicacion-kmeans-CLE}
+modelo_kmeans_k2_CLE <- kmeans(
+  datos_cluster_CLE,
+  centers = 2,
+  nstart = 25
+)
+
+modelo_kmeans_k2_CLE$size
+modelo_kmeans_k2_CLE$centers
+
+modelo_kmeans_k3_CLE <- kmeans(
+  datos_cluster_CLE,
+  centers = 3,
+  nstart = 25
+)
+
+modelo_kmeans_k3_CLE$size
+modelo_kmeans_k3_CLE$centers
+
+modelo_kmeans_k5_CLE <- kmeans(
+  datos_cluster_CLE,
+  centers = 5,
+  nstart = 25
+)
+
+modelo_kmeans_k5_CLE$size
+modelo_kmeans_k5_CLE$centers
+```
+
+**Explicación:**  
+<!-- PENDIENTE: reescribir con los números reales de Cleveland (tamaños de
+     grupo y silueta óptima), ya que el texto anterior describía los resultados
+     del análisis principal (920 pacientes) y no los de este subconjunto de
+     299 pacientes. -->
+
+**Visualización de clusters Cleveland**
+
+```{r visualizacion-clusters-CLE-combinaciones, echo=FALSE}
+datos_cluster_k2_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k2_CLE$cluster))
+
+datos_cluster_k3_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k3_CLE$cluster))
+
+datos_cluster_k5_CLE <- datos_cluster_CLE %>%
+  mutate(cluster = factor(modelo_kmeans_k5_CLE$cluster))
+
+pares_dims <- combn(c("Dim.1", "Dim.2", "Dim.3", "Dim.4"), 2, simplify = FALSE)
+
+comparar_todas_dims <- function(datos, titulo) {
+
+  datos_pares <- map_dfr(pares_dims, function(par) {
+    datos %>%
+      transmute(
+        eje_x       = .data[[par[1]]],
+        eje_y       = .data[[par[2]]],
+        cluster     = cluster,
+        comparacion = paste(par[1], "vs", par[2])
+      )
+  })
+
+  ggplot(datos_pares, aes(x = eje_x, y = eje_y, color = cluster)) +
+    geom_point(alpha = 0.6) +
+    stat_ellipse(type = "norm", linewidth = 1) +
+    facet_wrap(~ comparacion, scales = "free", ncol = 3) +
+    labs(title = titulo, x = "Primera dimensión del par",
+         y = "Segunda dimensión del par", color = "Cluster") +
+    theme_minimal()
+}
+
+comparar_todas_dims(datos_cluster_k2_CLE, "Cleveland: todas las combinaciones de componentes (k = 2)")
+comparar_todas_dims(datos_cluster_k3_CLE, "Cleveland: todas las combinaciones de componentes (k = 3)")
+comparar_todas_dims(datos_cluster_k5_CLE, "Cleveland: todas las combinaciones de componentes (k = 5)")
+```
+

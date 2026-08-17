@@ -173,3 +173,121 @@ Se observa que los grupos definidos por la variable de severidad (num) presentan
 
 **Justificacion de uso de PCA:**
 Si bien la reducción de dimensionalidad lograda mediante PCA fue moderada (de 5 variables a 4 componentes), dado el bajo nivel de correlación entre la mayoría de las variables originales, la aplicación de esta técnica continúa siendo pertinente antes de la clusterización. Esto se debe a que PCA transforma las variables en componentes ortogonales (no correlacionados entre sí), lo cual evita que la correlación moderada existente entre variables como age y thalch distorsione el cálculo de distancias en el algoritmo de clustering. Adicionalmente, permite descartar el componente de menor varianza (PC5), reduciendo parcialmente el ruido presente en los datos originales.
+
+## PCA de sensibilidad: casos completos
+
+```{r}
+datos_pca_completos <- data %>%
+  select(age, trestbps, chol, thalch, oldpeak, enfermedad) %>%
+  filter(complete.cases(select(., age, trestbps, chol, thalch, oldpeak)))
+
+# Separar la variable de color antes de pasarle solo las numéricas al PCA
+enfermedad_completos <- datos_pca_completos$enfermedad
+
+resultado_pca_completos <- PCA(
+  datos_pca_completos %>% select(-enfermedad),
+  scale.unit = TRUE,
+  graph = FALSE,
+  ncp = 4
+)
+nrow(datos_pca_completos)
+nrow(data) - nrow(datos_pca_completos)
+
+summary(resultado_pca_completos)
+kable(resultado_pca_completos$eig, digits = 2)
+kable(resultado_pca_completos$var$contrib, digits = 2)
+```
+
+```{r}
+fviz_pca_ind(resultado_pca_completos,
+             geom = "point",
+             habillage = enfermedad_completos,
+             addEllipses = TRUE,
+             repel = TRUE)
+```
+
+
+## PCA extendido: Cleveland con ca    
+
+```{r}
+datos_pca_cleveland <- data_CLE %>%
+  select(age, trestbps, chol, thalch, oldpeak, ca, enfermedad) %>%
+  filter(complete.cases(select(., age, trestbps, chol, thalch, oldpeak, ca)))
+
+enfermedad_cleveland <- datos_pca_cleveland$enfermedad
+
+resultado_pca_cleveland <- PCA(
+  datos_pca_cleveland %>% select(-enfermedad),
+  scale.unit = TRUE,
+  graph = FALSE,
+  ncp = 4
+)
+
+kable(resultado_pca_cleveland$eig, digits = 2,
+      caption = "Varianza explicada - PCA Cleveland con ca")
+
+kable(resultado_pca_cleveland$var$contrib, digits = 2,
+      caption = "Contribución de las variables - PCA Cleveland con ca")
+
+fviz_pca_var(
+  resultado_pca_cleveland,
+  col.var    = "contrib",
+  gradient.cols = c("#4FC3F7", "#1A2B32", "#D32F2F"),
+  repel      = TRUE
+) +
+  labs(title = "Círculo de correlación - PCA Cleveland con ca")
+```
+
+
+```{r}
+fviz_pca_ind(resultado_pca_cleveland,
+             geom = "point",
+             habillage = enfermedad_cleveland,
+             addEllipses = TRUE,
+             repel = TRUE)
+```
+
+
+
+## Comparación entre las tres versiones
+
+
+```{r}
+comparacion_pca <- data.frame(
+  Version = c("PCA principal (920, imputado)",
+              "PCA casos completos (718)",
+              "PCA Cleveland extendido (con ca)"),
+
+  N = c(nrow(datos_pca),
+        nrow(datos_pca_completos),
+        nrow(datos_pca_cleveland)),
+
+  Var_PC1 = c(resultado_pca$eig[1, 2],
+              resultado_pca_completos$eig[1, 2],
+              resultado_pca_cleveland$eig[1, 2]),
+
+  Var_PC2 = c(resultado_pca$eig[2, 2],
+              resultado_pca_completos$eig[2, 2],
+              resultado_pca_cleveland$eig[2, 2]),
+
+  Acumulada_4Comp = c(resultado_pca$eig[4, 3],
+                       resultado_pca_completos$eig[4, 3],
+                       resultado_pca_cleveland$eig[4, 3]),
+
+  Dominante_PC1 = c(
+    rownames(resultado_pca$var$contrib)[which.max(resultado_pca$var$contrib[, 1])],
+    rownames(resultado_pca_completos$var$contrib)[which.max(resultado_pca_completos$var$contrib[, 1])],
+    rownames(resultado_pca_cleveland$var$contrib)[which.max(resultado_pca_cleveland$var$contrib[, 1])]
+  ),
+
+  Dominante_PC2 = c(
+    rownames(resultado_pca$var$contrib)[which.max(resultado_pca$var$contrib[, 2])],
+    rownames(resultado_pca_completos$var$contrib)[which.max(resultado_pca_completos$var$contrib[, 2])],
+    rownames(resultado_pca_cleveland$var$contrib)[which.max(resultado_pca_cleveland$var$contrib[, 2])]
+  )
+)
+
+kable(comparacion_pca, digits = 2,
+      caption = "Comparación de las tres versiones del PCA")
+```
+
