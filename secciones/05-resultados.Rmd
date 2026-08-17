@@ -80,7 +80,7 @@ El Cluster 1 concentra la gran mayoría de los casos con enfermedad cardíaca di
 El Cluster 2 está compuesto mayoritariamente por pacientes sin enfermedad o con niveles mínimos. Esto valida que las variables seleccionadas (edad, presión, colesterol, frecuencia máxima y oldpeak) son suficientes para separar a la población en dos grupos con probabilidades muy diferentes de padecer la afección.
 Al refinar a k = 5, la distribución se alinea con la gravedad esperada:
 
-Los Clusters 1 y 3 (los de mayor presión arterial y/o mayor depresión del ST) muestran las tasas más altas de enfermedad presente. El Cluster 1, en particular, debería mostrar la proporción más alta de pacientes con enfermedad severa.
+Al refinar a k = 5, el Cluster 1 concentra la tasa más alta de enfermedad (89.1 %), coincidiendo con el perfil de mayor edad, mayor presión arterial y mayor depresión del ST. El Cluster 4, el más joven y con mejor capacidad de ejercicio, presenta la tasa más baja (19.3 %), funcionando como grupo de referencia sano. Los Clusters 2 y 5 quedan en un nivel intermedio-alto (61.7 % y 58.5 %). El Cluster 3 resulta el más llamativo: pese a tener la presión arterial más elevada de los cinco grupos, su tasa de enfermedad (43.5 %) es la segunda más baja, lo que sugiere que la presión arterial elevada por sí sola, sin acompañarse de una frecuencia cardíaca reducida o un oldpeak alto, no es suficiente para elevar el riesgo dentro de esta agrupación.
 El Cluster 4 (el más joven y con mejor capacidad de ejercicio) presenta la tasa más baja de enfermedad, actuando como el grupo de control "sano".
 El Cluster 2 (hipercolesterolémico) muestra una tasa intermedia, sugiriendo que el colesterol alto por sí solo, sin otros factores de estrés hemodinámico, no garantiza la presencia de enfermedad en la misma proporción que la combinación de edad y baja capacidad funcional.
 Esta progresión demuestra que aumentar el número de clusters permite discriminar mejor no solo la presencia de la enfermedad, sino también su gradiente de severidad, alineando los grupos estadísticos con la realidad clínica.
@@ -118,7 +118,7 @@ Como se anticipó en la tabla de cobertura, el centro de Suiza queda totalmente 
 
 Al analizar la distribución de los centros restantes (Cleveland, Hungría y Long Beach) entre los clusters:
 
-En la solución k = 2, se observa una mezcla razonable de los tres centros en ambos clusters, lo que indica que la separación no es un artefacto del hospital de origen. Sin embargo, es posible notar una ligera sobre-representación de pacientes de Cleveland en el Cluster 2 (menor riesgo), dado que este centro suele tener un sesgo hacia pacientes con datos más completos y a menudo menos severos en comparación con los de referencia hospitalaria de otros centros.
+En la solución k = 2, Cleveland y Hungría se reparten de forma relativamente pareja entre ambos clusters. El patrón más marcado corresponde a Long Beach, que concentra un 35.7 % de sus pacientes en el Cluster 1 (alto riesgo) frente a apenas un 5.4 % en el Cluster 2. Esto es coherente con lo observado en el análisis exploratorio, donde Long Beach presentaba la edad media más alta y la segunda mayor prevalencia de enfermedad entre los cuatro centros, y sugiere que parte de la separación entre clusters también refleja diferencias reales en la población atendida por cada hospital, más allá del artefacto de imputación.
 En la solución k = 5, la distribución sigue siendo heterogénea. No hay ningún cluster que esté dominado exclusivamente por un solo hospital (por ejemplo, no hay un "Cluster de Hungría" o "Cluster de Long Beach"). Esto es una buena señal, ya que sugiere que los patrones clínicos (edad, presión, colesterol) son consistentes a través de las diferentes poblaciones de los hospitales, y el algoritmo no está simplemente agrupando por la fuente de los datos.
 La única limitación notable es que, al perder a Suiza, no podemos determinar si los perfiles de riesgo identificados se mantienen en poblaciones con características demográficas o de registro diferentes a las de los tres centros restantes.
 
@@ -159,14 +159,12 @@ Se reutiliza la misma función perfil_por_cluster() de la sección principal, ah
 *Interpretación:*  
 Al incluir la variable ca (número de vasos principales coloreados) en el análisis de Cleveland, la capacidad de discriminación de los clusters mejora sustancialmente.
 
-En k = 2, la separación es muy nítida: el Cluster 1 presenta valores altos de ca (probablemente > 1 o 2 vasos afectados), confirmando que esta variable es un fuerte predictor de enfermedad. El Cluster 2 tiene valores de ca cercanos a 0.
+En k = 2, la separación es muy nítida: el Cluster 2 (132 pacientes) presenta valores altos de ca (1.26 en promedio), junto con mayor edad, menor frecuencia cardíaca máxima y mayor oldpeak, confirmando que esta variable distingue con fuerza al grupo de mayor riesgo. El Cluster 1 (167 pacientes) tiene ca cercano a 0 (0.21) y el perfil clínico más favorable de los dos grupos.
 En k = 3, emerge un perfil intermedio interesante:
 Un cluster con ca = 0 (sin enfermedad visible en vasos).
 Un cluster con ca = 1 (enfermedad leve/moderada).
 Un cluster con ca ≥ 2 (enfermedad severa). Esta solución captura muy bien la progresión de la enfermedad coronaria.
-En k = 5, la segmentación se vuelve muy específica. Es probable que veamos clusters diferenciados por combinaciones de edad y ca. Por ejemplo, un grupo de jóvenes con ca=0, un grupo de mayores con ca=0 (quizás con otros factores de riesgo), y grupos separados para ca=1 y ca≥2.
-La inclusión de ca valida que este es, efectivamente, el variable más discriminante del conjunto de datos. La solución k = 3 para Cleveland parece ser la más equilibrada, ofreciendo una clasificación clara de "sin enfermedad", "enfermedad leve" y "enfermedad severa" basada directamente en la anatomía coronaria, lo cual es clínicamente más útil que las soluciones de 2 o 5 grupos que pueden mezclar subtipos menos relevantes.
-
+En k = 5, el Cluster 1 (104 pacientes) es el de menor riesgo: más joven, mejor frecuencia cardíaca máxima y ca casi nulo (0.12). El Cluster 5 (50 pacientes) es el de mayor riesgo crítico, con la mayor edad, el oldpeak más alto (2.76) y el ca más elevado (1.74). El Cluster 4 (40 pacientes) es un subgrupo particular con colesterol muy elevado (318.25 mg/dl) pero ca moderado (0.90), similar en espíritu al grupo de "hipercolesterolemia aislada" que apareció en la solución general de 5 clusters. El Cluster 3 repite el patrón ya visto en la comparación contra severidad: presión arterial la más alta del grupo (152.92) pero ca bajo (0.34), reforzando que en este dataset la presión arterial elevada no siempre coincide con mayor compromiso coronario.
 
 ## Validación con ca y thal
 
